@@ -15,16 +15,30 @@ Full-stack restaurant POS built from the hackathon brief.
 
 ## Local setup
 
+Simplest Windows setup:
+
 1. Create a local PostgreSQL database named `odoo_pos_cafe`.
-2. Copy `backend/.env.example` to `backend/.env` and update credentials if needed.
+2. Run:
+   `powershell -ExecutionPolicy Bypass -File .\setup-windows.ps1`
+3. If needed, update `.env` and `backend/.env` with your PostgreSQL password.
+4. Start backend:
+   `python -m uvicorn app.main:app --reload --app-dir backend`
+5. Start frontend:
+   `cmd /c npm run dev --prefix frontend`
+
+Manual setup is still available if you prefer:
+
+1. Copy `backend/.env.example` to `backend/.env` and update credentials if needed.
+2. Copy `.env.example` to `.env` and update `DATABASE_URL`.
 3. Install backend dependencies:
    `python -m pip install -r backend/requirements.txt`
 4. Install frontend dependencies:
    `cmd /c npm install --prefix frontend`
-5. Start backend:
-   `python -m uvicorn app.main:app --reload --app-dir backend`
-6. Start frontend:
-   `cmd /c npm run dev --prefix frontend`
+5. Install root Prisma dependencies:
+   `npm install`
+6. Run Prisma:
+   `npx prisma generate`
+   `npx prisma db push`
 
 Demo credentials after first startup:
 
