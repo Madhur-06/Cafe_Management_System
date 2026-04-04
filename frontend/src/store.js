@@ -181,23 +181,17 @@ class Store {
     }
   }
 
-  _resolveLoginEmail(usernameOrEmail) {
-    if (usernameOrEmail.includes("@")) return usernameOrEmail;
-    const aliases = this.get("user_aliases", {});
-    return aliases[usernameOrEmail] || (usernameOrEmail === "admin" ? "admin@odoo-pos.local" : usernameOrEmail);
-  }
-
   async login(usernameOrEmail, password) {
-    const email = this._resolveLoginEmail(usernameOrEmail.trim());
+    const username = String(usernameOrEmail || "").trim();
     const response = await this._api("/auth/login", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ username, password }),
     }, false);
     this.setToken(response.access_token);
-    this.set("last_username", usernameOrEmail.trim());
+    this.set("last_username", username);
     this.setCurrentUser({
       id: response.user.id,
-      username: usernameOrEmail.trim(),
+      username: response.user.username,
       fullName: response.user.name,
       email: response.user.email,
       role: response.user.role,
@@ -232,6 +226,7 @@ class Store {
     [
       "currentUser",
       "activeSession",
+      "users",
       "products",
       "productsRaw",
       "categories",
@@ -458,6 +453,48 @@ class Store {
     });
     await this.syncProtectedData();
     return this._categoryIdByName(trimmedName);
+  }
+
+  async fetchUsers() {
+    const users = await this._api("/users");
+    this.set("users", users);
+    return users;
+  }
+
+  async createUser(user) {
+    const created = await this._api("/users", {
+      method: "POST",
+      body: JSON.stringify({
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        password: user.password,
+        role: user.role,
+      }),
+    });
+    await this.fetchUsers();
+    return created;
+  }
+
+  async updateUser(userId, user) {
+    const updated = await this._api(`/users/${userId}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        password: user.password || null,
+        role: user.role,
+        is_active: user.is_active,
+      }),
+    });
+    await this.fetchUsers();
+    return updated;
+  }
+
+  async deleteUser(userId) {
+    await this._api(`/users/${userId}`, { method: "DELETE" });
+    await this.fetchUsers();
   }
 
   async createProduct(product) {

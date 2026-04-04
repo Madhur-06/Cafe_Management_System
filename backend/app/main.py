@@ -6,10 +6,10 @@ from secrets import token_hex
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import func
+from sqlalchemy import func, text
 from sqlalchemy.orm import Session, joinedload
 
-from app.auth import create_access_token, get_current_user, hash_password, verify_password
+from app.auth import create_access_token, get_current_user, hash_password, require_role, verify_password
 from app.config import settings
 from app.database import Base, engine, get_db
 from app.models import (
@@ -51,6 +51,8 @@ from app.schemas import (
     TerminalInput,
     TerminalOut,
     TokenResponse,
+    UserUpdateInput,
+    UserCreateInput,
     UserOut,
 )
 
@@ -82,6 +84,42 @@ FIXED_PAYMENT_METHODS = {
     "card": {"name": "Card", "type": "card"},
     "upi": {"name": "UPI", "type": "upi"},
 }
+
+ALLOWED_USER_ROLES = {"admin", "staff", "chef"}
+
+
+def normalize_username(value: str) -> str:
+    return value.strip().lower()
+
+
+def ensure_usernames(db: Session) -> None:
+    db.execute(text('ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(50)'))
+    db.commit()
+
+    existing_users = db.query(User).order_by(User.id).all()
+    used: set[str] = set()
+    changed = False
+
+    for user in existing_users:
+        candidate = getattr(user, "username", None) or user.email.split("@")[0] or f"user{user.id}"
+        candidate = normalize_username(candidate)
+        if not candidate:
+            candidate = f"user{user.id}"
+        base = candidate
+        suffix = 1
+        while candidate in used or db.query(User).filter(User.username == candidate, User.id != user.id).first():
+            suffix += 1
+            candidate = f"{base}{suffix}"
+        if getattr(user, "username", None) != candidate:
+            user.username = candidate
+            changed = True
+        used.add(candidate)
+
+    if changed:
+        db.commit()
+
+    db.execute(text('CREATE UNIQUE INDEX IF NOT EXISTS ix_users_username ON users (username)'))
+    db.commit()
 
 
 def resolve_fixed_payment_method(db: Session, payment_method_id: int | None, payment_method_code: str | None) -> PaymentMethod:
@@ -279,6 +317,8 @@ def build_order(db: Session, payload: OrderCreateInput, responsible_id: int | No
 @app.on_event("startup")
 def startup() -> None:
     Base.metadata.create_all(bind=engine)
+    with Session(bind=engine) as db:
+        ensure_usernames(db)
 
 
 @app.get("/health")
@@ -288,25 +328,14 @@ def health() -> dict:
 
 @app.post("/auth/signup", response_model=TokenResponse)
 def signup(payload: SignupInput, db: Session = Depends(get_db)) -> TokenResponse:
-    if db.query(User).filter(User.email == payload.email).first():
-        raise HTTPException(status_code=400, detail="Email already registered")
-    user = User(
-        name=payload.name,
-        email=payload.email,
-        password_hash=hash_password(payload.password),
-        role="admin",
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return TokenResponse(access_token=create_access_token(user), user=user)
+    raise HTTPException(status_code=403, detail="Sign up is disabled. Ask an admin to create your account.")
 
 
 @app.post("/auth/login", response_model=TokenResponse)
 def login(payload: LoginInput, db: Session = Depends(get_db)) -> TokenResponse:
-    user = db.query(User).filter(User.email == payload.email).first()
+    user = db.query(User).filter(User.username == normalize_username(payload.username)).first()
     if not user or not verify_password(payload.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+        raise HTTPException(status_code=401, detail="Invalid username or password")
     if not user.is_active:
         raise HTTPException(status_code=403, detail="User is inactive")
     return TokenResponse(access_token=create_access_token(user), user=user)
@@ -315,6 +344,85 @@ def login(payload: LoginInput, db: Session = Depends(get_db)) -> TokenResponse:
 @app.get("/me", response_model=UserOut)
 def me(current_user: User = Depends(get_current_user)) -> User:
     return current_user
+
+
+@app.get("/users", response_model=list[UserOut])
+def list_users(current_user: User = Depends(require_role("admin")), db: Session = Depends(get_db)) -> list[User]:
+    return db.query(User).order_by(User.created_at.desc()).all()
+
+
+@app.post("/users", response_model=UserOut)
+def create_user(payload: UserCreateInput, current_user: User = Depends(require_role("admin")), db: Session = Depends(get_db)) -> User:
+    role = payload.role.strip().lower()
+    if role not in {"staff", "chef"}:
+        raise HTTPException(status_code=400, detail="Role must be staff or chef")
+    username = normalize_username(payload.username)
+    if not username:
+        raise HTTPException(status_code=400, detail="Username is required")
+    if db.query(User).filter(User.username == username).first():
+        raise HTTPException(status_code=400, detail="Username already exists")
+    if db.query(User).filter(User.email == payload.email).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+    user = User(
+        name=payload.name.strip(),
+        username=username,
+        email=payload.email.strip().lower(),
+        password_hash=hash_password(payload.password),
+        role=role,
+        is_active=True,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@app.patch("/users/{user_id}", response_model=UserOut)
+def update_user(user_id: int, payload: UserUpdateInput, current_user: User = Depends(require_role("admin")), db: Session = Depends(get_db)) -> User:
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    role = payload.role.strip().lower()
+    if user.id == current_user.id:
+        role = "admin"
+    elif role not in {"staff", "chef"}:
+        raise HTTPException(status_code=400, detail="Role must be staff or chef")
+
+    username = normalize_username(payload.username)
+    if not username:
+        raise HTTPException(status_code=400, detail="Username is required")
+    duplicate_username = db.query(User).filter(User.username == username, User.id != user_id).first()
+    if duplicate_username:
+        raise HTTPException(status_code=400, detail="Username already exists")
+
+    duplicate_email = db.query(User).filter(User.email == payload.email.strip().lower(), User.id != user_id).first()
+    if duplicate_email:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    user.name = payload.name.strip()
+    user.username = username
+    user.email = payload.email.strip().lower()
+    user.role = role
+    user.is_active = payload.is_active if user.id != current_user.id else True
+    if payload.password:
+        user.password_hash = hash_password(payload.password)
+
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@app.delete("/users/{user_id}")
+def delete_user(user_id: int, current_user: User = Depends(require_role("admin")), db: Session = Depends(get_db)) -> dict:
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="You cannot delete your own account")
+    db.delete(user)
+    db.commit()
+    return {"message": "User deleted"}
 
 
 @app.get("/dashboard")

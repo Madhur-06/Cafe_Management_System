@@ -39,6 +39,9 @@ router.on('/backend/self-order', () => {
 router.on('/backend/reports', () => {
   import('./pages/backend.js').then(m => m.renderBackend('reports'));
 });
+router.on('/backend/users', () => {
+  import('./pages/backend.js').then(m => m.renderBackend('users'));
+});
 router.on('/backend/kitchen', () => {
   import('./pages/backend.js').then(m => m.renderBackend('kitchen'));
 });
@@ -69,11 +72,31 @@ router.on('/customer', () => {
 
 // ---- Route Guard ---- //
 router.beforeEach = (path) => {
-  const publicRoutes = ['/login', '/customer', '/kitchen'];
+  const publicRoutes = ['/login', '/customer'];
   const isPublic = publicRoutes.some(r => path.startsWith(r));
+  const user = store.getCurrentUser();
 
-  if (!isPublic && !store.getCurrentUser()) {
+  if (!isPublic && !user) {
     return '/login';
+  }
+
+  if (isPublic) return null;
+
+  const role = String(user?.role || '').toLowerCase();
+  const adminRoutes = ['/backend/products', '/backend/payment-methods', '/backend/floors', '/backend/reports', '/backend/users'];
+  const staffRoutes = ['/backend/pos-settings', '/backend/self-order', '/pos/floor', '/pos/order/', '/pos/payment/'];
+  const chefRoutes = ['/kitchen'];
+
+  if (role === 'admin' && !adminRoutes.some(r => path.startsWith(r))) {
+    return '/backend/products';
+  }
+
+  if (role === 'staff' && !staffRoutes.some(r => path.startsWith(r))) {
+    return '/backend/pos-settings';
+  }
+
+  if (role === 'chef' && !chefRoutes.some(r => path.startsWith(r))) {
+    return '/kitchen';
   }
 
   return null; // proceed

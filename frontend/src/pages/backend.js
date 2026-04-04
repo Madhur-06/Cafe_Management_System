@@ -9,21 +9,26 @@ import { showToast } from '../components/toast.js';
 export function renderBackend(section = 'products') {
   const app = document.getElementById('app');
   const user = store.getCurrentUser();
+  const role = String(user?.role || '').toLowerCase();
 
-  const navItems = [
-    { section: 'Configuration', items: [
-      { id: 'products', icon: '\u{1F4E6}', label: 'Products' },
-      { id: 'payment-methods', icon: '\u{1F4B3}', label: 'Payment Methods' },
-      { id: 'floors', icon: '\u{1F3E2}', label: 'Floors & Tables' },
-    ]},
-    { section: 'POS', items: [
-      { id: 'pos-settings', icon: '\u{1F5A5}\uFE0F', label: 'POS Terminal' },
-      { id: 'self-order', icon: '\u{1F4F1}', label: 'Self Ordering' },
-    ]},
-    { section: 'Analytics', items: [
-      { id: 'reports', icon: '\u{1F4CA}', label: 'Reports & Dashboard' },
-    ]},
-  ];
+  const navItems = role === 'admin'
+    ? [
+        { section: 'Configuration', items: [
+          { id: 'products', icon: '\u{1F4E6}', label: 'Products' },
+          { id: 'payment-methods', icon: '\u{1F4B3}', label: 'Payment Methods' },
+          { id: 'floors', icon: '\u{1F3E2}', label: 'Floors & Tables' },
+          { id: 'users', icon: '\u{1F465}', label: 'Users' },
+        ]},
+        { section: 'Analytics', items: [
+          { id: 'reports', icon: '\u{1F4CA}', label: 'Reports & Dashboard' },
+        ]},
+      ]
+    : [
+        { section: 'POS', items: [
+          { id: 'pos-settings', icon: '\u{1F5A5}\uFE0F', label: 'POS Terminal' },
+          { id: 'self-order', icon: '\u{1F4F1}', label: 'Self Ordering' },
+        ]},
+      ];
 
   app.innerHTML = `
     <div class="backend-layout">
@@ -127,6 +132,11 @@ async function loadSection(section) {
     case 'reports': {
       const { renderReports } = await import('./reports.js');
       renderReports(content);
+      break;
+    }
+    case 'users': {
+      const { renderUsers } = await import('./users.js');
+      renderUsers(content);
       break;
     }
     case 'kitchen': {

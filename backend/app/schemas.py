@@ -11,6 +11,7 @@ class UserOut(BaseModel):
 
     id: int
     name: str
+    username: str
     email: str
     role: str
     is_active: bool
@@ -23,7 +24,7 @@ class TokenResponse(BaseModel):
 
 
 class LoginInput(BaseModel):
-    email: str
+    username: str
     password: str
 
 
@@ -31,6 +32,23 @@ class SignupInput(BaseModel):
     name: str
     email: str
     password: str
+
+
+class UserCreateInput(BaseModel):
+    name: str
+    username: str
+    email: str
+    password: str
+    role: str
+
+
+class UserUpdateInput(BaseModel):
+    name: str
+    username: str
+    email: str
+    password: str | None = None
+    role: str
+    is_active: bool = True
 
 
 class CategoryInput(BaseModel):
