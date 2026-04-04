@@ -554,6 +554,12 @@ class Store {
     await this.syncProtectedData();
   }
 
+  async deleteBranch(branchId) {
+    await this._api(`/branches/${branchId}`, { method: "DELETE" });
+    await this.fetchBranches();
+    await this.syncProtectedData();
+  }
+
   async fetchUsers() {
     const users = await this._api("/users");
     this.set("users", users);

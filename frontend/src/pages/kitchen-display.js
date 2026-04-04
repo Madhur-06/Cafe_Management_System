@@ -9,6 +9,14 @@ export function renderKitchenDisplay() {
   const app = document.getElementById("app");
   const activeBranch = store.getAll("branches").find((branch) => String(branch.id) === String(store.getActiveBranchId())) || null;
   let refreshInterval;
+  const dismissedCompletedIds = new Set();
+
+  function updateThemeButton() {
+    const themeButton = document.getElementById("kitchen-theme-toggle");
+    if (!themeButton) return;
+    const isDark = document.documentElement.getAttribute("data-theme") !== "light";
+    themeButton.textContent = isDark ? "☀️ Light" : "🌙 Dark";
+  }
 
   function renderTicket(order) {
     const orderStatus = order.paidOrder ? "paid" : order.stage === "preparing" ? "in_progress" : "open";
@@ -54,9 +62,15 @@ export function renderKitchenDisplay() {
     `;
   }
 
-  async function render() {
+  async function render(options = {}) {
     await store.syncPublicData();
-    const kitchenOrders = store.getAll("kitchenOrders");
+    let kitchenOrders = store.getAll("kitchenOrders");
+    if (options.dismissCompleted) {
+      kitchenOrders
+        .filter((order) => order.stage === "completed")
+        .forEach((order) => dismissedCompletedIds.add(String(order.id)));
+    }
+    kitchenOrders = kitchenOrders.filter((order) => !(order.stage === "completed" && dismissedCompletedIds.has(String(order.id))));
     const columns = {
       to_cook: kitchenOrders.filter((order) => order.stage === "to_cook"),
       preparing: kitchenOrders.filter((order) => order.stage === "preparing"),
@@ -70,9 +84,10 @@ export function renderKitchenDisplay() {
             <h1><span class="kitchen-topbar-icon">Kitchen</span> Kitchen Display</h1>
             <div style="font-size:var(--fs-sm);color:var(--color-text-muted)">${activeBranch ? `Branch: ${activeBranch.name}` : "Current branch"}</div>
           </div>
-          <div style="display:flex;gap:var(--space-sm)">
+          <div class="kitchen-topbar-actions">
+            <button class="theme-toggle-btn" id="kitchen-theme-toggle" type="button"></button>
             <button class="btn btn-sm btn-ghost" id="kitchen-refresh">Refresh</button>
-            <button class="btn btn-sm btn-ghost" id="kitchen-back">Back</button>
+            <button class="btn btn-sm btn-ghost" id="kitchen-logout">Logout</button>
           </div>
         </div>
         <div class="kitchen-kanban">
@@ -95,10 +110,20 @@ export function renderKitchenDisplay() {
       </div>
     `;
 
-    document.getElementById("kitchen-refresh")?.addEventListener("click", () => render());
-    document.getElementById("kitchen-back")?.addEventListener("click", () => {
+    updateThemeButton();
+
+    document.getElementById("kitchen-theme-toggle")?.addEventListener("click", () => {
+      const isLight = document.documentElement.getAttribute("data-theme") === "light";
+      document.documentElement.setAttribute("data-theme", isLight ? "dark" : "light");
+      localStorage.setItem("pos_theme", isLight ? "dark" : "light");
+      updateThemeButton();
+    });
+
+    document.getElementById("kitchen-refresh")?.addEventListener("click", () => render({ dismissCompleted: true }));
+    document.getElementById("kitchen-logout")?.addEventListener("click", () => {
       clearInterval(refreshInterval);
-      window.location.hash = "#/backend/products";
+      store.logout();
+      window.location.hash = "#/login";
     });
 
     app.querySelectorAll("[data-advance-ticket]").forEach((button) => {

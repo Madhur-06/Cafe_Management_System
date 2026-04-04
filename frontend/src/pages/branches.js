@@ -63,7 +63,10 @@ export function renderBranches(container) {
                         <div style="font-size:var(--fs-xs);color:var(--color-text-muted)">${branch.address || "No address"}</div>
                       </div>
                     </div>
-                    <button class="btn btn-sm btn-ghost edit-branch-btn" data-branch-id="${branch.id}">Edit</button>
+                    <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap">
+                      <button class="btn btn-sm btn-ghost edit-branch-btn" data-branch-id="${branch.id}">Edit</button>
+                      <button class="btn btn-sm btn-ghost delete-branch-btn" data-branch-id="${branch.id}" style="color:var(--color-danger)">Delete</button>
+                    </div>
                   </div>
                 `).join("")}
               </div>
@@ -111,6 +114,23 @@ export function renderBranches(container) {
       button.addEventListener("click", () => {
         editingBranchId = button.dataset.branchId;
         render();
+      });
+    });
+
+    container.querySelectorAll(".delete-branch-btn").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const branch = branches.find((item) => String(item.id) === String(button.dataset.branchId));
+        if (!branch) return;
+        const confirmed = window.confirm(`Delete branch "${branch.name}"? This only works if nothing is assigned to it.`);
+        if (!confirmed) return;
+        try {
+          await store.deleteBranch(branch.id);
+          if (String(editingBranchId) === String(branch.id)) editingBranchId = null;
+          showToast("Branch deleted successfully", "success");
+          render();
+        } catch (error) {
+          showToast(error.message, "error");
+        }
       });
     });
   }

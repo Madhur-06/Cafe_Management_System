@@ -536,6 +536,35 @@ def update_branch(branch_id: int, payload: BranchInput, current_user: User = Dep
     return branch
 
 
+@app.delete("/branches/{branch_id}")
+def delete_branch(branch_id: int, current_user: User = Depends(require_role("admin")), db: Session = Depends(get_db)) -> dict:
+    branch = db.get(Branch, branch_id)
+    if not branch:
+        raise HTTPException(status_code=404, detail="Branch not found")
+
+    total_branches = db.query(Branch).count()
+    if total_branches <= 1:
+        raise HTTPException(status_code=400, detail="You cannot delete the last remaining branch")
+    if db.query(User).filter(User.branch_id == branch_id).first():
+        raise HTTPException(status_code=400, detail="Branch cannot be deleted because users are assigned to it")
+    if db.query(Floor).filter(Floor.branch_id == branch_id).first():
+        raise HTTPException(status_code=400, detail="Branch cannot be deleted because floors exist for it")
+    if db.query(RestaurantTable).filter(RestaurantTable.branch_id == branch_id).first():
+        raise HTTPException(status_code=400, detail="Branch cannot be deleted because tables exist for it")
+    if db.query(POSTerminal).filter(POSTerminal.branch_id == branch_id).first():
+        raise HTTPException(status_code=400, detail="Branch cannot be deleted because terminals exist for it")
+    if db.query(POSSession).filter(POSSession.branch_id == branch_id).first():
+        raise HTTPException(status_code=400, detail="Branch cannot be deleted because sessions exist for it")
+    if db.query(Order).filter(Order.branch_id == branch_id).first():
+        raise HTTPException(status_code=400, detail="Branch cannot be deleted because orders exist for it")
+    if db.query(SelfOrderToken).filter(SelfOrderToken.branch_id == branch_id).first():
+        raise HTTPException(status_code=400, detail="Branch cannot be deleted because self-order tokens exist for it")
+
+    db.delete(branch)
+    db.commit()
+    return {"message": "Branch deleted"}
+
+
 @app.get("/users", response_model=list[UserOut])
 def list_users(current_user: User = Depends(require_role("admin")), db: Session = Depends(get_db)) -> list[User]:
     return db.query(User).options(joinedload(User.branch)).order_by(User.created_at.desc()).all()
