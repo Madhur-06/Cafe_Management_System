@@ -30,4 +30,3 @@ Demo credentials after first startup:
 
 - Email: `admin@odoo-pos.local`
 - Password: `admin123`
-
