@@ -17,7 +17,8 @@ Full-stack restaurant POS built from the hackathon brief.
 
 Simplest Windows setup:
 
-1. Create a local PostgreSQL database named `odoo_pos_cafe`.
+1. Create the local PostgreSQL database:
+   `createdb -U postgres odoo_pos_cafe`
 2. Run:
    `powershell -ExecutionPolicy Bypass -File .\setup-windows.ps1`
 3. If needed, update `.env` and `backend/.env` with your PostgreSQL password.
