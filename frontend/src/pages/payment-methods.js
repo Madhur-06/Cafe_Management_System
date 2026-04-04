@@ -25,7 +25,7 @@ export function renderPaymentMethods(container) {
                 <div class="payment-method-icon">${m.icon}</div>
                 <div>
                   <div class="payment-method-name">${m.name}</div>
-                  <div class="payment-method-type">${m.type === 'cash' ? 'Cash Payments' : m.type === 'digital' ? 'Card / Bank Payments' : 'UPI QR Payments'}</div>
+                  <div class="payment-method-type">${m.type === 'cash' ? 'Cash Payments' : m.type === 'card' ? 'Card Payments' : 'UPI QR Payments'}</div>
                 </div>
               </div>
               <label class="toggle">
@@ -40,9 +40,9 @@ export function renderPaymentMethods(container) {
               </p>
             ` : ''}
 
-            ${m.type === 'digital' ? `
+            ${m.type === 'card' ? `
               <p style="font-size:var(--fs-sm);color:var(--color-text-muted);margin-top:var(--space-sm)">
-                Accept debit/credit card and bank transfer payments. Generic digital payment method.
+                Accept debit and credit card payments at checkout.
               </p>
             ` : ''}
 

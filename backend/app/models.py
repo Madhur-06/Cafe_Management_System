@@ -266,6 +266,7 @@ class Payment(Base, TimestampMixin):
     paid_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     order: Mapped["Order"] = relationship(back_populates="payments")
+    payment_method: Mapped["PaymentMethod"] = relationship()
 
     @property
     def status(self) -> str:

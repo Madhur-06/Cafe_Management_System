@@ -22,6 +22,12 @@ const PAYMENT_ICONS = {
   upi: "📱",
 };
 
+const FIXED_PAYMENT_METHODS = [
+  { id: "cash", name: "Cash", type: "cash", enabled: true, upiId: null },
+  { id: "card", name: "Card", type: "card", enabled: true, upiId: null },
+  { id: "upi", name: "UPI", type: "upi", enabled: true, upiId: "" },
+];
+
 function tableNumberValue(tableNumber) {
   const match = String(tableNumber || "").match(/\d+/);
   return match ? Number(match[0]) : tableNumber;
@@ -158,6 +164,7 @@ class Store {
 
   async initialize() {
     this.set("settings", { storeName: "Odoo POS Cafe", currency: "₹" });
+    this.set("paymentMethods", this.getFixedPaymentMethods());
     if (!this.getToken()) return;
     try {
       const me = await this._api("/me");
@@ -260,6 +267,22 @@ class Store {
     }));
   }
 
+  getFixedPaymentMethods() {
+    const settings = this.get("paymentMethodSettings", {});
+    return FIXED_PAYMENT_METHODS.map((method) => {
+      const override = settings[method.id] || {};
+      return {
+        ...method,
+        ...override,
+        id: method.id,
+        name: method.name,
+        type: method.type,
+        icon: PAYMENT_ICONS[method.type] || PAYMENT_ICONS.digital || "💳",
+        is_active: true,
+      };
+    });
+  }
+
   _normalizeFloors(floors) {
     return floors.map((floor) => ({ id: floor.id, name: floor.name, active: true }));
   }
@@ -325,7 +348,10 @@ class Store {
       sessionId: order.session_id,
       createdAt: order.created_at,
       updatedAt: order.paid_at || order.closed_at || order.created_at,
-      paymentMethod: order.payments[0] ? paymentMethodMap.get(String(order.payments[0].payment_method_id)) : "",
+      paymentMethod:
+        order.payments[0]?.payment_method_name
+        || (order.payments[0]?.payment_method_code ? paymentMethodMap.get(String(order.payments[0].payment_method_code)) : "")
+        || "",
       paymentStatus: order.payment_status,
       kitchenStatus: order.kitchen_status,
       responsibleId: order.responsible_id,
@@ -373,10 +399,9 @@ class Store {
 
   async syncProtectedData() {
     if (!this.getToken()) return;
-    const [categoriesMeta, productsRaw, paymentMethodsRaw, floorsRaw, terminals, sessionsRaw, ordersRaw, reportsRaw] = await Promise.all([
+    const [categoriesMeta, productsRaw, floorsRaw, terminals, sessionsRaw, ordersRaw, reportsRaw] = await Promise.all([
       this._api("/categories"),
       this._api("/products"),
-      this._api("/payment-methods"),
       this._api("/floors"),
       this._api("/terminals"),
       this._api("/sessions"),
@@ -385,7 +410,7 @@ class Store {
     ]);
 
     const products = this._normalizeProducts(productsRaw, categoriesMeta);
-    const paymentMethods = this._normalizePaymentMethods(paymentMethodsRaw);
+    const paymentMethods = this.getFixedPaymentMethods();
     const floors = this._normalizeFloors(floorsRaw);
     const tables = this._normalizeTables(floorsRaw);
     const orders = this._normalizeOrders(ordersRaw, paymentMethods);
@@ -481,18 +506,16 @@ class Store {
   }
 
   async updatePaymentMethod(id, updates) {
-    const current = this.find("paymentMethods", id);
+    const current = this.getFixedPaymentMethods().find((method) => String(method.id) === String(id));
     if (!current) throw new Error("Payment method not found");
-    await this._api(`/payment-methods/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify({
-        name: updates.name ?? current.name,
-        type: updates.type ?? current.type,
-        enabled: updates.enabled ?? current.enabled,
-        upi_id: updates.upiId ?? current.upiId ?? null,
-      }),
-    });
-    await this.syncProtectedData();
+    const settings = this.get("paymentMethodSettings", {});
+    settings[id] = {
+      enabled: updates.enabled ?? current.enabled,
+      upiId: updates.upiId ?? current.upiId ?? null,
+    };
+    this.set("paymentMethodSettings", settings);
+    this.set("paymentMethods", this.getFixedPaymentMethods());
+    return this.find("paymentMethods", id);
   }
 
   async createFloor(name) {
@@ -613,7 +636,7 @@ class Store {
     const paid = await this._api(`/orders/${order.id}/payments`, {
       method: "POST",
       body: JSON.stringify({
-        payment_method_id: methodId,
+        payment_method_code: paymentMethod?.type || methodId,
         amount: Number(order.total || order.grand_total || 0),
         reference: paymentMethod?.type === "upi" ? `UPI-${Date.now()}` : null,
       }),

@@ -77,6 +77,49 @@ def payment_method_to_payload(method: PaymentMethod) -> dict:
     }
 
 
+FIXED_PAYMENT_METHODS = {
+    "cash": {"name": "Cash", "type": "cash"},
+    "card": {"name": "Card", "type": "card"},
+    "upi": {"name": "UPI", "type": "upi"},
+}
+
+
+def resolve_fixed_payment_method(db: Session, payment_method_id: int | None, payment_method_code: str | None) -> PaymentMethod:
+    if payment_method_code:
+        method_key = str(payment_method_code).strip().lower()
+        if method_key not in FIXED_PAYMENT_METHODS:
+            raise HTTPException(status_code=400, detail="Invalid payment method")
+        method = db.query(PaymentMethod).filter(PaymentMethod.type == method_key).first()
+        if not method:
+            fixed_method = FIXED_PAYMENT_METHODS[method_key]
+            method = PaymentMethod(
+                name=fixed_method["name"],
+                type=fixed_method["type"],
+                enabled=True,
+                is_active=True,
+                config_json={},
+            )
+            db.add(method)
+            db.flush()
+        else:
+            fixed_method = FIXED_PAYMENT_METHODS[method_key]
+            method.name = fixed_method["name"]
+            method.type = fixed_method["type"]
+            method.enabled = True
+            method.is_active = True
+        return method
+
+    if payment_method_id is None:
+        raise HTTPException(status_code=400, detail="Payment method is required")
+
+    method = db.get(PaymentMethod, payment_method_id)
+    if not method:
+        raise HTTPException(status_code=404, detail="Payment method not found")
+    if not method.enabled or not method.is_active:
+        raise HTTPException(status_code=400, detail="Payment method is disabled")
+    return method
+
+
 def terminal_runtime_info(db: Session) -> tuple[dict[int, int], dict[int, float]]:
     open_sessions = {
         session.terminal_id: session.id
@@ -140,6 +183,8 @@ def serialize_order(order: Order) -> dict:
                 "transaction_ref": payment.transaction_ref,
                 "paid_at": payment.paid_at.isoformat() if payment.paid_at else None,
                 "payment_method_id": payment.payment_method_id,
+                "payment_method_code": payment.payment_method.type if payment.payment_method else None,
+                "payment_method_name": payment.payment_method.name if payment.payment_method else None,
             }
             for payment in order.payments
         ],
@@ -677,16 +722,12 @@ def add_payment(order_id: int, payload: PaymentInput, current_user: User = Depen
             detail=f"Payment amount must match the order total of {expected_amount:.2f}",
         )
 
-    payment_method = db.get(PaymentMethod, payload.payment_method_id)
-    if not payment_method:
-        raise HTTPException(status_code=404, detail="Payment method not found")
-    if not payment_method.enabled or not payment_method.is_active:
-        raise HTTPException(status_code=400, detail="Payment method is disabled")
+    payment_method = resolve_fixed_payment_method(db, payload.payment_method_id, payload.payment_method_code)
 
     paid_at = datetime.utcnow()
     payment = Payment(
         order_id=order.id,
-        payment_method_id=payload.payment_method_id,
+        payment_method_id=payment_method.id,
         amount=Decimal(str(payload.amount)),
         reference=payload.reference,
         transaction_ref=payload.reference,

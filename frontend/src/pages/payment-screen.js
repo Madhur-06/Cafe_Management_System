@@ -17,6 +17,11 @@ export function renderPaymentScreen(container, orderId) {
     return;
   }
 
+  if (!(order.status === "in_progress" || order.status === "paid")) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-state-text">Send the order to kitchen before taking payment.</div></div>';
+    return;
+  }
+
   let selectedMethod = null;
   let viewState = "select";
 

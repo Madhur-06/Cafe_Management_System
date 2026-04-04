@@ -179,7 +179,8 @@ class OrderCreateInput(BaseModel):
 
 
 class PaymentInput(BaseModel):
-    payment_method_id: int
+    payment_method_id: int | None = None
+    payment_method_code: str | None = None
     amount: float
     reference: str | None = None
 

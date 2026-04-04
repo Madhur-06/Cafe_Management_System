@@ -73,6 +73,7 @@ export function renderOrderScreen(container, tableId) {
         : products.filter((product) => product.category === activeCategory);
 
     const { subtotal, tax, total } = recalc();
+    const canGoToPayment = order.status === "in_progress" || order.status === "paid";
 
     container.innerHTML = `
       <div class="order-layout">
@@ -158,10 +159,11 @@ export function renderOrderScreen(container, tableId) {
             <button class="btn btn-accent btn-block" id="send-kitchen-btn" ${cartItems.length === 0 ? "disabled" : ""}>
               Send to Kitchen
             </button>
-            <button class="btn btn-primary btn-block" id="go-payment-btn" ${cartItems.length === 0 ? "disabled" : ""}>
+            <button class="btn btn-primary btn-block" id="go-payment-btn" ${cartItems.length === 0 || !canGoToPayment ? "disabled" : ""}>
               Payment
             </button>
           </div>
+          ${cartItems.length > 0 && !canGoToPayment ? `<p style="margin-top:var(--space-sm);font-size:var(--fs-xs);color:var(--color-text-muted)">Send the order to kitchen before taking payment.</p>` : ""}
         </div>
       </div>
     `;
@@ -221,6 +223,7 @@ export function renderOrderScreen(container, tableId) {
         order = { ...store.getDraftOrder(), id: sentOrder.id, backendId: sentOrder.id, status: "in_progress" };
         store.setDraftOrder(order);
         showToast("Order sent to kitchen!", "success");
+        render();
       } catch (error) {
         showToast(error.message, "error");
       }
@@ -228,6 +231,10 @@ export function renderOrderScreen(container, tableId) {
 
     document.getElementById("go-payment-btn")?.addEventListener("click", () => {
       saveOrder();
+      if (!(order.status === "in_progress" || order.status === "paid")) {
+        showToast("Send the order to kitchen before opening payment", "error");
+        return;
+      }
       router.navigate(`#/pos/payment/${store.getDraftOrder()?.id || order.id}`);
     });
   }
