@@ -21,7 +21,7 @@ Simplest Windows setup:
    `createdb -U postgres odoo_pos_cafe`
 2. Run:
    `powershell -ExecutionPolicy Bypass -File .\setup-windows.ps1`
-3. If needed, update `.env` and `backend/.env` with your PostgreSQL password.
+3. Update `.env` and `backend/.env` with your PostgreSQL password.
 4. Start backend:
    `python -m uvicorn app.main:app --reload --app-dir backend`
 5. Start frontend:
