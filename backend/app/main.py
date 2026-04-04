@@ -1254,6 +1254,32 @@ def submit_self_order(payload: SelfOrderInput, db: Session = Depends(get_db)) ->
     return {"message": "Self order placed", "order_number": order.order_number, "order_id": order.id}
 
 
+@app.get("/reports/branches")
+def branch_reports_summary(current_user: User = Depends(require_role("admin")), db: Session = Depends(get_db)) -> list[dict]:
+    branches = db.query(Branch).order_by(Branch.name).all()
+    summary: list[dict] = []
+    for branch in branches:
+        orders = db.query(Order).filter(Order.branch_id == branch.id).all()
+        paid_orders = [order for order in orders if order.payment_status == "paid"]
+        sales = sum(float(order.grand_total) for order in paid_orders)
+        summary.append(
+            {
+                "branch_id": branch.id,
+                "branch_name": branch.name,
+                "branch_code": branch.code,
+                "is_active": branch.is_active,
+                "orders": len(orders),
+                "paid_orders": len(paid_orders),
+                "sales": sales,
+                "avg_order_value": round(sales / len(paid_orders), 2) if paid_orders else 0,
+                "open_sessions": db.query(POSSession).filter(POSSession.branch_id == branch.id, POSSession.status == "open").count(),
+                "users": db.query(User).filter(User.branch_id == branch.id).count(),
+                "tables": db.query(RestaurantTable).filter(RestaurantTable.branch_id == branch.id).count(),
+            }
+        )
+    return summary
+
+
 @app.get("/reports")
 def reports(
     period: str | None = None,

@@ -468,9 +468,10 @@ class Store {
       this._api(branchQueryPath("/sessions")),
       this._api(branchQueryPath("/orders")),
       role === "admin" ? this._api(branchQueryPath("/reports")) : Promise.resolve(null),
+      role === "admin" ? this._api("/reports/branches") : Promise.resolve([]),
     ];
 
-    const [categoriesMeta, productsRaw, floorsRaw, terminals, sessionsRaw, ordersRaw, reportsRaw] = await Promise.all(requests);
+    const [categoriesMeta, productsRaw, floorsRaw, terminals, sessionsRaw, ordersRaw, reportsRaw, branchReportsRaw] = await Promise.all(requests);
 
     const products = this._normalizeProducts(productsRaw, categoriesMeta);
     const paymentMethods = this.getFixedPaymentMethods();
@@ -491,6 +492,7 @@ class Store {
     this.set("sessions", sessions);
     this.set("orders", orders);
     this.set("reports_raw", reportsRaw);
+    this.set("reports_branch_summary", branchReportsRaw);
     if (activeOpenSession) this.setActiveSession(activeOpenSession);
     else this.setActiveSession(null);
 

@@ -105,6 +105,7 @@ export function renderReports(container) {
   function render() {
     const branches = store.getAll("branches");
     const activeBranch = branches.find((branch) => String(branch.id) === String(activeBranchId)) || null;
+    const branchSummary = store.get("reports_branch_summary", []);
     const sessions = store.getAll("sessions");
     const products = store.getAll("products");
     const allOrders = store.getAll("orders");
@@ -254,6 +255,34 @@ export function renderReports(container) {
         </div>
       </div>
 
+      ${
+        branchSummary.length
+          ? `
+            <div class="chart-card" style="margin-top:var(--space-xl)">
+              <div class="chart-card-header">
+                <span class="chart-card-title">All Branches Summary</span>
+              </div>
+              <div style="display:grid;gap:var(--space-sm);padding-top:var(--space-sm)">
+                ${branchSummary.map((branch) => `
+                  <div style="display:grid;grid-template-columns:minmax(140px,1.2fr) repeat(6,minmax(90px,1fr));gap:var(--space-md);align-items:center;padding:10px 0;border-bottom:1px solid var(--color-border)">
+                    <div>
+                      <div style="font-weight:700">${branch.branch_name}</div>
+                      <div style="font-size:var(--fs-xs);color:var(--color-text-muted)">${branch.branch_code} · ${branch.is_active ? "Active" : "Inactive"}</div>
+                    </div>
+                    <div><div style="font-size:var(--fs-xs);color:var(--color-text-muted)">Sales</div><div style="font-weight:700;color:var(--color-secondary)">${currency}${Number(branch.sales || 0).toFixed(2)}</div></div>
+                    <div><div style="font-size:var(--fs-xs);color:var(--color-text-muted)">Orders</div><div style="font-weight:700">${branch.orders || 0}</div></div>
+                    <div><div style="font-size:var(--fs-xs);color:var(--color-text-muted)">Paid</div><div style="font-weight:700">${branch.paid_orders || 0}</div></div>
+                    <div><div style="font-size:var(--fs-xs);color:var(--color-text-muted)">Open Sessions</div><div style="font-weight:700">${branch.open_sessions || 0}</div></div>
+                    <div><div style="font-size:var(--fs-xs);color:var(--color-text-muted)">Users</div><div style="font-weight:700">${branch.users || 0}</div></div>
+                    <div><div style="font-size:var(--fs-xs);color:var(--color-text-muted)">Tables</div><div style="font-weight:700">${branch.tables || 0}</div></div>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+          `
+          : ""
+      }
+
       <div class="order-history-section">
         <div class="order-history-header">
           <h3>Order History</h3>
@@ -273,6 +302,7 @@ export function renderReports(container) {
                     <thead>
                       <tr>
                         <th>Order #</th>
+                        <th>Branch</th>
                         <th>Table</th>
                         <th>Items</th>
                         <th>Total</th>
@@ -288,6 +318,7 @@ export function renderReports(container) {
                           (order) => `
                             <tr class="order-row ${String(selectedOrderId) === String(order.id) ? "selected" : ""}" data-order-id="${order.id}">
                               <td><span class="order-id-chip">#${shortOrderId(order.id)}</span></td>
+                              <td>${order.branchName || "-"}</td>
                               <td>${order.tableNumber ? `<span class="table-chip">T${order.tableNumber}</span>` : "-"}</td>
                               <td><span class="item-count-badge">${(order.items || []).length}</span></td>
                               <td style="font-weight:700;color:var(--color-secondary)">${currency}${Number(order.total || 0).toFixed(2)}</td>
@@ -317,6 +348,10 @@ export function renderReports(container) {
                     <button class="odp-close-btn" id="close-detail-btn">x</button>
                   </div>
                   <div class="odp-meta-grid">
+                    <div class="odp-meta-item">
+                      <div class="odp-meta-label">Branch</div>
+                      <div class="odp-meta-value">${selectedOrder.branchName || "-"}</div>
+                    </div>
                     <div class="odp-meta-item">
                       <div class="odp-meta-label">Status</div>
                       <div class="odp-meta-value">${selectedOrder.paymentStatus || selectedOrder.status || "-"}</div>
@@ -407,6 +442,7 @@ export function renderReports(container) {
     document.getElementById("export-csv-btn")?.addEventListener("click", () => {
       const data = orders.map((order) => ({
         OrderID: shortOrderId(order.id),
+        Branch: order.branchName || "",
         Table: order.tableNumber || "",
         Items: (order.items || []).length,
         Total: Number(order.total || 0).toFixed(2),
@@ -422,6 +458,7 @@ export function renderReports(container) {
     document.getElementById("export-xls-btn")?.addEventListener("click", () => {
       const data = orders.map((order) => ({
         "Order ID": shortOrderId(order.id),
+        Branch: order.branchName || "",
         Table: order.tableNumber || "",
         Items: (order.items || []).length,
         Total: Number(order.total || 0),
@@ -435,9 +472,10 @@ export function renderReports(container) {
     });
 
     document.getElementById("export-pdf-btn")?.addEventListener("click", () => {
-      const headers = ["Order #", "Table", "Items", "Total", "Payment", "Status", "Staff", "Date"];
+      const headers = ["Order #", "Branch", "Table", "Items", "Total", "Payment", "Status", "Staff", "Date"];
       const rows = orders.map((order) => [
         shortOrderId(order.id),
+        order.branchName || "",
         order.tableNumber ? `T${order.tableNumber}` : "",
         (order.items || []).length,
         `${currency}${Number(order.total || 0).toFixed(2)}`,
