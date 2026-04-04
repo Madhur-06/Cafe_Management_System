@@ -1,0 +1,158 @@
+/* ==========================================================================
+   Kitchen Display — Kanban board styles
+   ========================================================================== */
+
+.kitchen-layout {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+}
+
+.kitchen-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  height: 56px;
+  flex-shrink: 0;
+}
+.kitchen-topbar h1 {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.kitchen-topbar-icon { font-size: 1.4rem; }
+
+.kitchen-kanban {
+  flex: 1;
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  overflow-x: auto;
+}
+
+.kitchen-column {
+  flex: 1;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.kitchen-column-header {
+  padding: var(--space-md) var(--space-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--color-border);
+}
+.kitchen-column-title {
+  font-weight: 700;
+  font-size: var(--fs-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.kitchen-column-count {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+
+.kitchen-column.to-cook .kitchen-column-header { border-bottom-color: rgba(255,77,106,0.3); }
+.kitchen-column.to-cook .kitchen-column-count { background: rgba(255,77,106,0.15); color: var(--color-danger); }
+.kitchen-column.preparing .kitchen-column-header { border-bottom-color: rgba(255,181,71,0.3); }
+.kitchen-column.preparing .kitchen-column-count { background: rgba(255,181,71,0.15); color: var(--color-accent); }
+.kitchen-column.completed .kitchen-column-header { border-bottom-color: rgba(0,229,160,0.3); }
+.kitchen-column.completed .kitchen-column-count { background: rgba(0,229,160,0.15); color: var(--color-secondary); }
+
+.kitchen-column-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.kitchen-ticket {
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  cursor: default;
+  background: var(--color-bg-alt);
+  border: 1px solid var(--color-border);
+}
+.kitchen-ticket:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.kitchen-ticket-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+.kitchen-ticket-id {
+  font-weight: 700;
+  font-size: var(--fs-md);
+  color: var(--color-primary-light);
+}
+.kitchen-ticket-table {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}
+.kitchen-ticket-time {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}
+
+.kitchen-ticket-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.kitchen-ticket-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  border-radius: var(--radius-xs);
+  font-size: var(--fs-sm);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+.kitchen-ticket-item:hover {
+  background: var(--color-surface-hover);
+}
+.kitchen-ticket-item.done {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+.kitchen-ticket-item-name { flex: 1; }
+.kitchen-ticket-item-qty {
+  font-weight: 700;
+  color: var(--color-accent);
+  min-width: 30px;
+  text-align: right;
+}
+
+.kitchen-ticket-action {
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-border);
+  text-align: right;
+}
