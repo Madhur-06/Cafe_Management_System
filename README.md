@@ -40,7 +40,3 @@ Manual setup is still available if you prefer:
    `npx prisma generate`
    `npx prisma db push`
 
-Demo credentials after first startup:
-
-- Email: `admin@odoo-pos.local`
-- Password: `admin123`
