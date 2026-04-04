@@ -44,9 +44,8 @@ if ($databaseUrlReady -and $backendPasswordReady) {
 } else {
   Write-Host ""
   Write-Host "Dependencies are installed, but database setup is paused." -ForegroundColor Yellow
-  Write-Host "1. Create PostgreSQL database: odoo_pos_cafe"
-  Write-Host "2. Update .env DATABASE_URL"
-  Write-Host "3. Update backend\.env DATABASE_PASSWORD if needed"
-  Write-Host "4. Run: npx prisma generate"
-  Write-Host "5. Run: npx prisma db push"
+  Write-Host "1. Update .env DATABASE_URL"
+  Write-Host "2. Update backend\.env DATABASE_PASSWORD"
+  Write-Host "3. Run: npx prisma generate"
+  Write-Host "4. Run: npx prisma db push"
 }
