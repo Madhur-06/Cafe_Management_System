@@ -9,6 +9,7 @@ import { generateTokenQR } from '../utils/qr.js';
 export function renderSelfOrder(container) {
   const tables = store.getAll('tables').filter(t => t.active);
   const session = store.getActiveSession();
+  const activeBranch = store.getAll('branches').find((branch) => String(branch.id) === String(store.getActiveBranchId())) || null;
   const currency = store.get('settings')?.currency || '₹';
   let selectedTable = null;
   let tokenGenerated = false;
@@ -17,7 +18,10 @@ export function renderSelfOrder(container) {
   function render() {
     container.innerHTML = `
       <div class="backend-header">
-        <h1>📱 Self Ordering</h1>
+        <div>
+          <h1>Self Ordering</h1>
+          <div style="font-size:var(--fs-sm);color:var(--color-text-muted)">${activeBranch ? `Branch: ${activeBranch.name}` : "Current branch"}</div>
+        </div>
       </div>
       <p style="color:var(--color-text-muted);margin-bottom:var(--space-xl);font-size:var(--fs-sm)">
         Generate a token QR code for a table. Customers scan it with their phone to place orders directly, which are sent to the Kitchen Display.

@@ -42,6 +42,9 @@ router.on('/backend/reports', () => {
 router.on('/backend/users', () => {
   import('./pages/backend.js').then(m => m.renderBackend('users'));
 });
+router.on('/backend/branches', () => {
+  import('./pages/backend.js').then(m => m.renderBackend('branches'));
+});
 router.on('/backend/kitchen', () => {
   import('./pages/backend.js').then(m => m.renderBackend('kitchen'));
 });
@@ -83,7 +86,7 @@ router.beforeEach = (path) => {
   if (isPublic) return null;
 
   const role = String(user?.role || '').toLowerCase();
-  const adminRoutes = ['/backend/products', '/backend/payment-methods', '/backend/floors', '/backend/reports', '/backend/users'];
+  const adminRoutes = ['/backend/products', '/backend/payment-methods', '/backend/floors', '/backend/reports', '/backend/users', '/backend/branches'];
   const staffRoutes = ['/backend/pos-settings', '/backend/self-order', '/pos/floor', '/pos/order/', '/pos/payment/'];
   const chefRoutes = ['/kitchen'];
 

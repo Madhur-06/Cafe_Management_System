@@ -6,10 +6,31 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class BranchInput(BaseModel):
+    name: str
+    code: str
+    address: str = ""
+    phone: str = ""
+    is_active: bool = True
+
+
+class BranchOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    code: str
+    address: str
+    phone: str
+    is_active: bool
+
+
 class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    branch_id: int | None = None
+    branch_name: str | None = None
     name: str
     username: str
     email: str
@@ -35,6 +56,7 @@ class SignupInput(BaseModel):
 
 
 class UserCreateInput(BaseModel):
+    branch_id: int | None = None
     name: str
     username: str
     email: str
@@ -43,6 +65,7 @@ class UserCreateInput(BaseModel):
 
 
 class UserUpdateInput(BaseModel):
+    branch_id: int | None = None
     name: str
     username: str
     email: str
@@ -125,6 +148,8 @@ class TableOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    branch_id: int | None = None
+    branch_name: str | None = None
     floor_id: int
     table_number: str
     seats: int
@@ -136,6 +161,8 @@ class FloorWithTables(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    branch_id: int | None = None
+    branch_name: str | None = None
     name: str
     is_active: bool
     tables: list[TableOut]
@@ -151,6 +178,8 @@ class TerminalOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    branch_id: int | None = None
+    branch_name: str | None = None
     name: str
     location: str
     active: bool
@@ -172,6 +201,8 @@ class SessionOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    branch_id: int | None = None
+    branch_name: str | None = None
     terminal_id: int
     responsible_id: int
     status: str
@@ -205,6 +236,7 @@ class PaymentInput(BaseModel):
 
 class SelfOrderTokenOut(BaseModel):
     token: str
+    branch_id: int | None = None
     table_id: int
     session_id: int
 

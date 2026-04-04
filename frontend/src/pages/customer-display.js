@@ -7,6 +7,7 @@ import store from "../store.js";
 export function renderCustomerDisplay() {
   const app = document.getElementById("app");
   const currency = store.get("settings")?.currency || "₹";
+  const activeBranch = store.getAll("branches").find((branch) => String(branch.id) === String(store.getActiveBranchId())) || null;
   let refreshInterval;
 
   function renderOrderCard(order) {
@@ -49,6 +50,7 @@ export function renderCustomerDisplay() {
           <div class="cd-topbar-center">
             <span class="cd-live-badge">● LIVE</span>
             <span class="cd-order-count">${activeOrders.length} active order${activeOrders.length !== 1 ? "s" : ""}</span>
+            <span class="cd-order-count">${activeBranch ? activeBranch.name : ""}</span>
           </div>
           <button id="customer-back-btn" class="btn btn-ghost btn-sm">Back</button>
         </div>

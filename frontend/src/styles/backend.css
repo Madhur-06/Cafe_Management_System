@@ -214,14 +214,18 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: var(--space-md);
+  gap: var(--space-md);
 }
 .payment-method-info {
   display: flex;
   align-items: center;
   gap: var(--space-md);
+  min-width: 0;
 }
 .payment-method-icon {
-  font-size: 2rem;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
   width: 56px;
   height: 56px;
   display: flex;
@@ -229,6 +233,8 @@
   justify-content: center;
   border-radius: var(--radius-md);
   background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  flex-shrink: 0;
 }
 .payment-method-name {
   font-weight: 600;
@@ -238,12 +244,48 @@
   font-size: var(--fs-xs);
   color: var(--color-text-muted);
 }
+.payment-method-toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-shrink: 0;
+}
+.payment-method-description {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  margin-top: var(--space-sm);
+}
+.payment-method-note {
+  margin-top: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+  border: 1px solid var(--color-border);
+}
+.payment-method-actions {
+  display: flex;
+  justify-content: flex-end;
+}
 
 .upi-config {
   margin-top: var(--space-md);
   padding-top: var(--space-md);
   border-top: 1px solid var(--color-border);
   animation: fadeInUp var(--transition-slow) both;
+}
+
+@media (max-width: 640px) {
+  .payment-method-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .payment-method-toggle-wrap {
+    width: 100%;
+    justify-content: space-between;
+  }
 }
 
 /* ---- Floor & Tables ---- */

@@ -6,8 +6,29 @@ datasource db {
   provider = "postgresql"
 }
 
+model Branch {
+  id              Int              @id @default(autoincrement())
+  name            String           @unique @db.VarChar(120)
+  code            String           @unique @db.VarChar(30)
+  address         String           @default("")
+  phone           String           @default("") @db.VarChar(30)
+  isActive        Boolean          @default(true) @map("is_active")
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamp(6)
+  users           User[]
+  floors          Floor[]
+  tables          RestaurantTable[]
+  terminals       POSTerminal[]
+  sessions        POSSession[]
+  orders          Order[]
+  selfOrderTokens SelfOrderToken[]
+
+  @@map("branches")
+}
+
 model User {
   id           Int          @id @default(autoincrement())
+  branchId     Int?         @map("branch_id")
   name         String       @db.VarChar(120)
   username     String       @unique @db.VarChar(50)
   email        String       @unique @db.VarChar(255)
@@ -16,6 +37,7 @@ model User {
   isActive     Boolean      @default(true) @map("is_active")
   createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt    DateTime     @updatedAt @map("updated_at") @db.Timestamp(6)
+  branch       Branch?      @relation(fields: [branchId], references: [id])
   sessions     POSSession[]
   orders       Order[]
 
@@ -94,44 +116,54 @@ model PaymentMethod {
 
 model Floor {
   id        Int               @id @default(autoincrement())
-  name      String            @unique @db.VarChar(120)
+  branchId  Int?              @map("branch_id")
+  name      String            @db.VarChar(120)
   isActive  Boolean           @default(true) @map("is_active")
   createdAt DateTime          @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt DateTime          @updatedAt @map("updated_at") @db.Timestamp(6)
+  branch    Branch?           @relation(fields: [branchId], references: [id])
   tables    RestaurantTable[]
 
+  @@unique([branchId, name], map: "uq_floors_branch_name")
   @@map("floors")
 }
 
 model RestaurantTable {
   id          Int              @id @default(autoincrement())
+  branchId     Int?             @map("branch_id")
   floorId     Int              @map("floor_id")
   tableNumber String           @map("table_number") @db.VarChar(50)
   seats       Int              @default(2)
   active      Boolean          @default(true)
   createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamp(6)
+  branch      Branch?          @relation(fields: [branchId], references: [id])
   floor       Floor            @relation(fields: [floorId], references: [id])
   orders      Order[]
   tokens      SelfOrderToken[]
 
+  @@unique([branchId, tableNumber], map: "uq_tables_branch_number")
   @@map("restaurant_tables")
 }
 
 model POSTerminal {
   id        Int          @id @default(autoincrement())
-  name      String       @unique @db.VarChar(120)
+  branchId  Int?         @map("branch_id")
+  name      String       @db.VarChar(120)
   location  String       @default("Main Hall") @db.VarChar(120)
   active    Boolean      @default(true)
   createdAt DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt DateTime     @updatedAt @map("updated_at") @db.Timestamp(6)
+  branch    Branch?      @relation(fields: [branchId], references: [id])
   sessions  POSSession[]
 
+  @@unique([branchId, name], map: "uq_terminals_branch_name")
   @@map("pos_terminals")
 }
 
 model POSSession {
   id            Int         @id @default(autoincrement())
+  branchId      Int?        @map("branch_id")
   terminalId    Int         @map("terminal_id")
   responsibleId Int         @map("responsible_id")
   status        String      @default("open") @db.VarChar(50)
@@ -141,6 +173,7 @@ model POSSession {
   closedAt      DateTime?   @map("closed_at") @db.Timestamp(6)
   createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt     DateTime    @updatedAt @map("updated_at") @db.Timestamp(6)
+  branch        Branch?     @relation(fields: [branchId], references: [id])
   terminal      POSTerminal @relation(fields: [terminalId], references: [id])
   responsible   User        @relation(fields: [responsibleId], references: [id])
   orders        Order[]
@@ -151,6 +184,7 @@ model POSSession {
 
 model Order {
   id            Int              @id @default(autoincrement())
+  branchId      Int?             @map("branch_id")
   orderNumber   String           @unique @map("order_number") @db.VarChar(50)
   sessionId     Int              @map("session_id")
   tableId       Int?             @map("table_id")
@@ -167,6 +201,7 @@ model Order {
   closedAt      DateTime?        @map("closed_at") @db.Timestamp(6)
   createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt     DateTime         @updatedAt @map("updated_at") @db.Timestamp(6)
+  branch        Branch?          @relation(fields: [branchId], references: [id])
   session       POSSession       @relation(fields: [sessionId], references: [id])
   table         RestaurantTable? @relation(fields: [tableId], references: [id])
   responsible   User             @relation(fields: [responsibleId], references: [id])
@@ -215,6 +250,7 @@ model Payment {
 
 model SelfOrderToken {
   id        Int             @id @default(autoincrement())
+  branchId  Int?            @map("branch_id")
   token     String          @unique @db.VarChar(64)
   tableId   Int             @map("table_id")
   sessionId Int             @map("session_id")
@@ -222,6 +258,7 @@ model SelfOrderToken {
   expiresAt DateTime?       @map("expires_at") @db.Timestamp(6)
   createdAt DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt DateTime        @updatedAt @map("updated_at") @db.Timestamp(6)
+  branch    Branch?         @relation(fields: [branchId], references: [id])
   table     RestaurantTable @relation(fields: [tableId], references: [id])
   session   POSSession      @relation(fields: [sessionId], references: [id])
 

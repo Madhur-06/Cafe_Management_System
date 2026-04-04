@@ -23,6 +23,7 @@ export async function renderUsers(container) {
 
   function render() {
     const users = store.getAll("users");
+    const branches = store.getAll("branches");
     const currentUser = store.getCurrentUser();
     const editingUser = editingUserId ? users.find((user) => String(user.id) === String(editingUserId)) : null;
 
@@ -57,6 +58,13 @@ export async function renderUsers(container) {
             </select>
           </div>
           <div class="form-group">
+            <label class="form-label">Branch</label>
+            <select class="form-input" id="user-branch" ${editingUser && String(editingUser.id) === String(currentUser?.id) ? "disabled" : ""}>
+              <option value="">Select branch</option>
+              ${branches.map((branch) => `<option value="${branch.id}" ${String(editingUser?.branch_id || editingUser?.branchId || "") === String(branch.id) ? "selected" : ""}>${branch.name}</option>`).join("")}
+            </select>
+          </div>
+          <div class="form-group">
             <label class="form-label">Status</label>
             <select class="form-input" id="user-status" ${editingUser && String(editingUser.id) === String(currentUser?.id) ? "disabled" : ""}>
               <option value="true" ${editingUser ? (editingUser.is_active ? "selected" : "") : "selected"}>Active</option>
@@ -85,6 +93,7 @@ export async function renderUsers(container) {
                         <div style="font-weight:600;font-size:var(--fs-sm)">${user.name}</div>
                         <div style="font-size:var(--fs-xs);color:var(--color-text-muted)">@${user.username}</div>
                         <div style="font-size:var(--fs-xs);color:var(--color-text-muted)">${user.email}</div>
+                        <div style="font-size:var(--fs-xs);color:var(--color-text-muted)">${user.branch_name || "No branch assigned"}</div>
                       </div>
                     </div>
                     <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap">
@@ -107,10 +116,15 @@ export async function renderUsers(container) {
       const email = document.getElementById("user-email").value.trim();
       const password = document.getElementById("user-password").value;
       const role = document.getElementById("user-role").value;
+      const branch_id = document.getElementById("user-branch").value || null;
       const is_active = document.getElementById("user-status").value === "true";
 
       if (!name || !username || !email) {
         showToast("Name, username, and email are required", "error");
+        return;
+      }
+      if ((!editingUser || String(editingUser.id) !== String(currentUser?.id)) && !branch_id) {
+        showToast("Please assign a branch", "error");
         return;
       }
       if (!editingUser && password.length < 6) {
@@ -124,11 +138,11 @@ export async function renderUsers(container) {
 
       try {
         if (editingUser) {
-          await store.updateUser(editingUser.id, { name, username, email, password, role, is_active });
+          await store.updateUser(editingUser.id, { branch_id, name, username, email, password, role, is_active });
           showToast("User updated successfully", "success");
           editingUserId = null;
         } else {
-          await store.createUser({ name, username, email, password, role });
+          await store.createUser({ branch_id, name, username, email, password, role });
           showToast("User created successfully", "success");
         }
         render();

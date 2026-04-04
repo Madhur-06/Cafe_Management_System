@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, JSON, Numeric, String, Text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, JSON, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -16,10 +16,30 @@ class TimestampMixin:
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class Branch(Base, TimestampMixin):
+    __tablename__ = "branches"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(120), unique=True)
+    code: Mapped[str] = mapped_column(String(30), unique=True, index=True)
+    address: Mapped[str] = mapped_column(Text, default="")
+    phone: Mapped[str] = mapped_column(String(30), default="")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    users: Mapped[list["User"]] = relationship(back_populates="branch")
+    floors: Mapped[list["Floor"]] = relationship(back_populates="branch")
+    tables: Mapped[list["RestaurantTable"]] = relationship(back_populates="branch")
+    terminals: Mapped[list["POSTerminal"]] = relationship(back_populates="branch")
+    sessions: Mapped[list["POSSession"]] = relationship(back_populates="branch")
+    orders: Mapped[list["Order"]] = relationship(back_populates="branch")
+    self_order_tokens: Mapped[list["SelfOrderToken"]] = relationship(back_populates="branch")
+
+
 class User(Base, TimestampMixin):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    branch_id: Mapped[int | None] = mapped_column(ForeignKey("branches.id"), nullable=True)
     name: Mapped[str] = mapped_column(String(120))
     username: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
@@ -27,8 +47,13 @@ class User(Base, TimestampMixin):
     role: Mapped[str] = mapped_column(String(50), default="admin")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
+    branch: Mapped["Branch | None"] = relationship(back_populates="users")
     sessions: Mapped[list["POSSession"]] = relationship(back_populates="responsible")
     orders: Mapped[list["Order"]] = relationship(back_populates="responsible")
+
+    @property
+    def branch_name(self) -> str | None:
+        return self.branch.name if self.branch else None
 
 
 class Category(Base, TimestampMixin):
@@ -142,23 +167,33 @@ class PaymentMethod(Base, TimestampMixin):
 
 class Floor(Base, TimestampMixin):
     __tablename__ = "floors"
+    __table_args__ = (UniqueConstraint("branch_id", "name", name="uq_floors_branch_name"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(120), unique=True)
+    branch_id: Mapped[int | None] = mapped_column(ForeignKey("branches.id"), nullable=True)
+    name: Mapped[str] = mapped_column(String(120))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
+    branch: Mapped["Branch | None"] = relationship(back_populates="floors")
     tables: Mapped[list["RestaurantTable"]] = relationship(back_populates="floor")
+
+    @property
+    def branch_name(self) -> str | None:
+        return self.branch.name if self.branch else None
 
 
 class RestaurantTable(Base, TimestampMixin):
     __tablename__ = "restaurant_tables"
+    __table_args__ = (UniqueConstraint("branch_id", "table_number", name="uq_tables_branch_number"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    branch_id: Mapped[int | None] = mapped_column(ForeignKey("branches.id"), nullable=True)
     floor_id: Mapped[int] = mapped_column(ForeignKey("floors.id"))
     table_number: Mapped[str] = mapped_column(String(50))
     seats: Mapped[int] = mapped_column(Integer, default=2)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
 
+    branch: Mapped["Branch | None"] = relationship(back_populates="tables")
     floor: Mapped["Floor"] = relationship(back_populates="tables")
     orders: Mapped[list["Order"]] = relationship(back_populates="table")
 
@@ -166,22 +201,34 @@ class RestaurantTable(Base, TimestampMixin):
     def appointment_resource(self) -> str | None:
         return None
 
+    @property
+    def branch_name(self) -> str | None:
+        return self.branch.name if self.branch else None
+
 
 class POSTerminal(Base, TimestampMixin):
     __tablename__ = "pos_terminals"
+    __table_args__ = (UniqueConstraint("branch_id", "name", name="uq_terminals_branch_name"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(120), unique=True)
+    branch_id: Mapped[int | None] = mapped_column(ForeignKey("branches.id"), nullable=True)
+    name: Mapped[str] = mapped_column(String(120))
     location: Mapped[str] = mapped_column(String(120), default="Main Hall")
     active: Mapped[bool] = mapped_column(Boolean, default=True)
 
+    branch: Mapped["Branch | None"] = relationship(back_populates="terminals")
     sessions: Mapped[list["POSSession"]] = relationship(back_populates="terminal")
+
+    @property
+    def branch_name(self) -> str | None:
+        return self.branch.name if self.branch else None
 
 
 class POSSession(Base, TimestampMixin):
     __tablename__ = "pos_sessions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    branch_id: Mapped[int | None] = mapped_column(ForeignKey("branches.id"), nullable=True)
     terminal_id: Mapped[int] = mapped_column(ForeignKey("pos_terminals.id"))
     responsible_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     status: Mapped[str] = mapped_column(String(50), default="open")
@@ -190,26 +237,39 @@ class POSSession(Base, TimestampMixin):
     opened_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
+    branch: Mapped["Branch | None"] = relationship(back_populates="sessions")
     terminal: Mapped["POSTerminal"] = relationship(back_populates="sessions")
     responsible: Mapped["User"] = relationship(back_populates="sessions")
     orders: Mapped[list["Order"]] = relationship(back_populates="session")
+
+    @property
+    def branch_name(self) -> str | None:
+        return self.branch.name if self.branch else None
 
 
 class SelfOrderToken(Base, TimestampMixin):
     __tablename__ = "self_order_tokens"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    branch_id: Mapped[int | None] = mapped_column(ForeignKey("branches.id"), nullable=True)
     token: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     table_id: Mapped[int] = mapped_column(ForeignKey("restaurant_tables.id"))
     session_id: Mapped[int] = mapped_column(ForeignKey("pos_sessions.id"))
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
+    branch: Mapped["Branch | None"] = relationship(back_populates="self_order_tokens")
+
+    @property
+    def branch_name(self) -> str | None:
+        return self.branch.name if self.branch else None
+
 
 class Order(Base, TimestampMixin):
     __tablename__ = "orders"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    branch_id: Mapped[int | None] = mapped_column(ForeignKey("branches.id"), nullable=True)
     order_number: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     session_id: Mapped[int] = mapped_column(ForeignKey("pos_sessions.id"))
     table_id: Mapped[int | None] = mapped_column(ForeignKey("restaurant_tables.id"), nullable=True)
@@ -225,6 +285,7 @@ class Order(Base, TimestampMixin):
     paid_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
+    branch: Mapped["Branch | None"] = relationship(back_populates="orders")
     session: Mapped["POSSession"] = relationship(back_populates="orders")
     responsible: Mapped["User"] = relationship(back_populates="orders")
     table: Mapped["RestaurantTable"] = relationship(back_populates="orders")
@@ -234,6 +295,10 @@ class Order(Base, TimestampMixin):
     @property
     def source(self) -> str:
         return self.order_type
+
+    @property
+    def branch_name(self) -> str | None:
+        return self.branch.name if self.branch else None
 
 
 class OrderItem(Base, TimestampMixin):

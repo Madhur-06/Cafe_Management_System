@@ -10,10 +10,14 @@ export function renderBackend(section = 'products') {
   const app = document.getElementById('app');
   const user = store.getCurrentUser();
   const role = String(user?.role || '').toLowerCase();
+  const branches = store.getAll('branches');
+  const activeBranchId = store.getActiveBranchId();
+  const activeBranch = branches.find((branch) => String(branch.id) === String(activeBranchId)) || branches[0] || null;
 
   const navItems = role === 'admin'
     ? [
         { section: 'Configuration', items: [
+          { id: 'branches', icon: '\u{1F3E2}', label: 'Branches' },
           { id: 'products', icon: '\u{1F4E6}', label: 'Products' },
           { id: 'payment-methods', icon: '\u{1F4B3}', label: 'Payment Methods' },
           { id: 'floors', icon: '\u{1F3E2}', label: 'Floors & Tables' },
@@ -36,6 +40,25 @@ export function renderBackend(section = 'products') {
         <div class="sidebar-brand" id="sidebar-home-btn" style="cursor:pointer;" title="Back to Home">
           <span class="sidebar-brand-icon">\u2615</span>
           <h2>POS Cafe</h2>
+        </div>
+
+        <div class="sidebar-section" style="padding-bottom:var(--space-md);border-bottom:1px solid var(--color-border)">
+          <div class="sidebar-section-title">Branch</div>
+          ${
+            role === 'admin'
+              ? `
+                <select class="form-input" id="branch-switcher" style="width:100%">
+                  ${branches.map((branch) => `
+                    <option value="${branch.id}" ${String(branch.id) === String(activeBranchId) ? 'selected' : ''}>
+                      ${branch.name}
+                    </option>
+                  `).join('')}
+                </select>
+              `
+              : `
+                <div class="badge badge-primary" style="display:inline-flex">${activeBranch?.name || user?.branchName || 'Assigned Branch'}</div>
+              `
+          }
         </div>
 
         ${navItems.map(group => `
@@ -74,7 +97,16 @@ export function renderBackend(section = 'products') {
   `;
 
   document.getElementById('sidebar-home-btn')?.addEventListener('click', () => {
-    router.navigate('#/backend/products');
+    router.navigate(role === 'staff' ? '#/backend/pos-settings' : '#/backend/products');
+  });
+
+  document.getElementById('branch-switcher')?.addEventListener('change', async (event) => {
+    try {
+      await store.setActiveBranch(event.target.value);
+      renderBackend(section);
+    } catch (error) {
+      showToast(error.message, 'error');
+    }
   });
 
   const themeBtn = document.getElementById('theme-toggle-btn');
@@ -137,6 +169,11 @@ async function loadSection(section) {
     case 'users': {
       const { renderUsers } = await import('./users.js');
       renderUsers(content);
+      break;
+    }
+    case 'branches': {
+      const { renderBranches } = await import('./branches.js');
+      renderBranches(content);
       break;
     }
     case 'kitchen': {

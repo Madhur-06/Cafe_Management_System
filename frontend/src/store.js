@@ -1,25 +1,21 @@
-/* ==========================================================================
-   Store -- API-backed data cache with local draft support
-   ========================================================================== */
-
 const STORE_PREFIX = "odoo_pos_";
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
 
-const CATEGORY_EMOJIS = {
-  Pizza: "🍕",
-  Pasta: "🍝",
-  Burger: "🍔",
-  Coffee: "☕",
-  Drinks: "🥤",
-  Beverages: "🥤",
-  Dessert: "🍰",
-  Snacks: "🍟",
+const CATEGORY_BADGES = {
+  Pizza: "P",
+  Pasta: "PA",
+  Burger: "B",
+  Coffee: "C",
+  Drinks: "D",
+  Beverages: "D",
+  Dessert: "DS",
+  Snacks: "S",
 };
 
 const PAYMENT_ICONS = {
-  cash: "💵",
-  digital: "💳",
-  upi: "📱",
+  cash: "₹",
+  card: "CC",
+  upi: "UPI",
 };
 
 const FIXED_PAYMENT_METHODS = [
@@ -68,39 +64,35 @@ class Store {
     this._emit(name, null);
   }
 
-  getToken() {
-    return this.get("token", "");
+  on(event, callback) {
+    if (!this._listeners[event]) this._listeners[event] = [];
+    this._listeners[event].push(callback);
+    return () => this.off(event, callback);
   }
 
-  setToken(token) {
-    if (token) this.set("token", token);
-    else this.remove("token");
+  off(event, callback) {
+    if (!this._listeners[event]) return;
+    this._listeners[event] = this._listeners[event].filter((cb) => cb !== callback);
   }
 
-  async _api(path, options = {}, includeAuth = true) {
-    const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
-    if (includeAuth && this.getToken()) headers.Authorization = `Bearer ${this.getToken()}`;
-    const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
-    const payload = await response.json().catch(() => null);
-    if (!response.ok) {
-      throw new Error(parseError(payload, `Request failed (${response.status})`));
-    }
-    return payload;
-  }
-
-  generateId() {
-    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  _emit(event, data) {
+    (this._listeners[event] || []).forEach((cb) => cb(data));
+    (this._listeners["*"] || []).forEach((cb) => cb(event, data));
   }
 
   getAll(collection) {
     return this.get(collection, []);
   }
 
+  find(collection, id) {
+    return this.getAll(collection).find((item) => String(item.id) === String(id)) || null;
+  }
+
   add(collection, item) {
     const items = this.getAll(collection);
     const nextItem = {
       ...item,
-      id: item.id || this.generateId(),
+      id: item.id || `${Date.now()}${Math.random().toString(36).slice(2, 7)}`,
       createdAt: item.createdAt || new Date().toISOString(),
     };
     items.push(nextItem);
@@ -117,32 +109,13 @@ class Store {
     return items[index];
   }
 
-  deleteItem(collection, id) {
-    this.set(collection, this.getAll(collection).filter((item) => String(item.id) !== String(id)));
+  getToken() {
+    return this.get("token", "");
   }
 
-  find(collection, id) {
-    return this.getAll(collection).find((item) => String(item.id) === String(id)) || null;
-  }
-
-  findWhere(collection, predicate) {
-    return this.getAll(collection).filter(predicate);
-  }
-
-  on(event, callback) {
-    if (!this._listeners[event]) this._listeners[event] = [];
-    this._listeners[event].push(callback);
-    return () => this.off(event, callback);
-  }
-
-  off(event, callback) {
-    if (!this._listeners[event]) return;
-    this._listeners[event] = this._listeners[event].filter((cb) => cb !== callback);
-  }
-
-  _emit(event, data) {
-    (this._listeners[event] || []).forEach((cb) => cb(data));
-    (this._listeners["*"] || []).forEach((cb) => cb(event, data));
+  setToken(token) {
+    if (token) this.set("token", token);
+    else this.remove("token");
   }
 
   getCurrentUser() {
@@ -162,104 +135,87 @@ class Store {
     else this.remove("activeSession");
   }
 
-  async initialize() {
-    this.set("settings", { storeName: "Odoo POS Cafe", currency: "₹" });
-    this.set("paymentMethods", this.getFixedPaymentMethods());
-    if (!this.getToken()) return;
-    try {
-      const me = await this._api("/me");
-      this.setCurrentUser({
-        id: me.id,
-        username: this.get("last_username", me.email),
-        fullName: me.name,
-        email: me.email,
-        role: me.role,
-      });
-      await this.syncProtectedData();
-    } catch {
-      this.logout();
+  getActiveBranchId() {
+    return this.get("activeBranchId", null);
+  }
+
+  async _api(path, options = {}, includeAuth = true) {
+    const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+    if (includeAuth && this.getToken()) headers.Authorization = `Bearer ${this.getToken()}`;
+    const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(parseError(payload, `Request failed (${response.status})`));
     }
+    return payload;
   }
 
-  async login(usernameOrEmail, password) {
-    const username = String(usernameOrEmail || "").trim();
-    const response = await this._api("/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ username, password }),
-    }, false);
-    this.setToken(response.access_token);
-    this.set("last_username", username);
+  _withBranch(path, branchId = this.getActiveBranchId()) {
+    if (!branchId) return path;
+    const separator = path.includes("?") ? "&" : "?";
+    return `${path}${separator}branch_id=${encodeURIComponent(branchId)}`;
+  }
+
+  _applyCurrentUser(me) {
     this.setCurrentUser({
-      id: response.user.id,
-      username: response.user.username,
-      fullName: response.user.name,
-      email: response.user.email,
-      role: response.user.role,
+      id: me.id,
+      username: me.username,
+      fullName: me.name,
+      email: me.email,
+      role: me.role,
+      branchId: me.branch_id ?? null,
+      branchName: me.branch_name ?? null,
     });
-    await this.syncProtectedData();
-    return this.getCurrentUser();
   }
 
-  async signup({ fullName, email, username, password }) {
-    const response = await this._api("/auth/signup", {
-      method: "POST",
-      body: JSON.stringify({ name: fullName, email, password }),
-    }, false);
-    const aliases = this.get("user_aliases", {});
-    aliases[username] = email;
-    this.set("user_aliases", aliases);
-    this.set("last_username", username);
-    this.setToken(response.access_token);
-    this.setCurrentUser({
-      id: response.user.id,
-      username,
-      fullName: response.user.name,
-      email: response.user.email,
-      role: response.user.role,
-    });
-    await this.syncProtectedData();
-    return this.getCurrentUser();
-  }
-
-  logout() {
-    this.setToken("");
-    [
-      "currentUser",
-      "activeSession",
-      "users",
-      "products",
-      "productsRaw",
-      "categories",
-      "categoriesMeta",
-      "paymentMethods",
-      "floors",
-      "tables",
-      "sessions",
-      "orders",
-      "kitchenOrders",
-      "customerOrders",
-      "reports_raw",
-      "currentOrder",
-    ].forEach((key) => this.remove(key));
-  }
-
-  _normalizeProducts(products, categoriesMeta) {
-    const categoryMap = new Map(categoriesMeta.map((category) => [String(category.id), category.name]));
-    return products.map((product) => ({
-      ...product,
-      category: categoryMap.get(String(product.category_id)) || "Uncategorized",
-      emoji: CATEGORY_EMOJIS[categoryMap.get(String(product.category_id))] || "📦",
-      price: Number(product.price),
-      tax: Number(product.tax || 0),
+  _normalizeBranches(branches) {
+    return branches.map((branch) => ({
+      id: branch.id,
+      name: branch.name,
+      code: branch.code,
+      address: branch.address || "",
+      phone: branch.phone || "",
+      is_active: branch.is_active !== false,
     }));
   }
 
-  _normalizePaymentMethods(methods) {
-    return methods.map((method) => ({
-      ...method,
-      icon: PAYMENT_ICONS[method.type] || "💳",
-      upiId: method.upi_id,
-    }));
+  _ensureActiveBranch(branches = this.getAll("branches")) {
+    const user = this.getCurrentUser();
+    if (!branches.length) {
+      this.remove("activeBranchId");
+      return null;
+    }
+
+    let nextBranchId = this.getActiveBranchId();
+    if (String(user?.role || "").toLowerCase() !== "admin") {
+      nextBranchId = user?.branchId || branches[0]?.id || null;
+    } else if (!nextBranchId || !branches.some((branch) => String(branch.id) === String(nextBranchId))) {
+      nextBranchId = branches[0]?.id || null;
+    }
+
+    if (nextBranchId) this.set("activeBranchId", nextBranchId);
+    else this.remove("activeBranchId");
+    return nextBranchId;
+  }
+
+  async fetchBranches() {
+    const branches = this._normalizeBranches(await this._api("/branches"));
+    this.set("branches", branches);
+    this._ensureActiveBranch(branches);
+    return branches;
+  }
+
+  async setActiveBranch(branchId) {
+    const user = this.getCurrentUser();
+    if (String(user?.role || "").toLowerCase() !== "admin") {
+      this._ensureActiveBranch();
+      return this.getActiveBranchId();
+    }
+    this.set("activeBranchId", branchId || null);
+    this.remove("currentOrder");
+    this.setActiveSession(null);
+    await this.syncProtectedData();
+    return this.getActiveBranchId();
   }
 
   getFixedPaymentMethods() {
@@ -272,20 +228,39 @@ class Store {
         id: method.id,
         name: method.name,
         type: method.type,
-        icon: PAYMENT_ICONS[method.type] || PAYMENT_ICONS.digital || "💳",
+        icon: PAYMENT_ICONS[method.type] || method.name,
         is_active: true,
       };
     });
   }
 
+  _normalizeProducts(products, categoriesMeta) {
+    const categoryMap = new Map(categoriesMeta.map((category) => [String(category.id), category.name]));
+    return products.map((product) => ({
+      ...product,
+      category: categoryMap.get(String(product.category_id)) || "Uncategorized",
+      emoji: CATEGORY_BADGES[categoryMap.get(String(product.category_id))] || "PR",
+      price: Number(product.price),
+      tax: Number(product.tax || 0),
+    }));
+  }
+
   _normalizeFloors(floors) {
-    return floors.map((floor) => ({ id: floor.id, name: floor.name, active: true }));
+    return floors.map((floor) => ({
+      id: floor.id,
+      branchId: floor.branch_id,
+      branchName: floor.branch_name || "",
+      name: floor.name,
+      active: floor.is_active !== false,
+    }));
   }
 
   _normalizeTables(floors) {
     return floors.flatMap((floor) =>
-      floor.tables.map((table) => ({
+      (floor.tables || []).map((table) => ({
         id: table.id,
+        branchId: table.branch_id,
+        branchName: table.branch_name || floor.branch_name || "",
         floorId: floor.id,
         number: tableNumberValue(table.table_number),
         seats: table.seats,
@@ -297,7 +272,6 @@ class Store {
   }
 
   _normalizeSessions(sessions, orders = []) {
-    const currentUser = this.getCurrentUser();
     const totalsBySession = new Map();
     const countsBySession = new Map();
 
@@ -311,31 +285,39 @@ class Store {
 
     return sessions.map((session) => ({
       id: session.id,
+      branchId: session.branch_id,
+      branchName: session.branch_name || "",
       status: session.status,
       openedAt: session.opened_at || session.created_at,
-      responsible: session.responsible_id === currentUser?.id ? currentUser.fullName : `User #${session.responsible_id}`,
+      responsible: session.responsible_name || `User #${session.responsible_id}`,
       responsibleId: session.responsible_id,
       totalSales: Number(totalsBySession.get(String(session.id)) || 0),
       orderCount: Number(countsBySession.get(String(session.id)) || 0),
     }));
   }
 
-  _normalizeOrders(orders, paymentMethods) {
-    const paymentMethodMap = new Map(paymentMethods.map((method) => [String(method.id), method.name]));
+  _normalizeOrders(orders) {
     return orders.map((order) => ({
       id: order.id,
       backendId: order.id,
+      branchId: order.branch_id,
+      branchName: order.branch_name || "",
       tableId: order.table_id,
       tableNumber: tableNumberValue(order.table_name),
-      status: order.payment_status === "paid" ? "paid" : order.kitchen_status === "preparing" || order.kitchen_status === "to_cook" || order.status === "sent" ? "in_progress" : "open",
-      items: order.items.map((item) => ({
+      status:
+        order.payment_status === "paid"
+          ? "paid"
+          : order.kitchen_status === "preparing" || order.kitchen_status === "to_cook" || order.status === "sent"
+            ? "in_progress"
+            : "open",
+      items: (order.items || []).map((item) => ({
         id: item.id,
         productId: item.product_id,
         name: item.name,
         price: Number(item.unit_price),
         qty: item.quantity,
-        tax: 0,
-        emoji: "🍽️",
+        tax: Number(item.tax_rate || 0),
+        emoji: "IT",
       })),
       subtotal: Number(order.subtotal),
       tax: Number(order.tax_total),
@@ -343,14 +325,11 @@ class Store {
       sessionId: order.session_id,
       createdAt: order.created_at,
       updatedAt: order.paid_at || order.closed_at || order.created_at,
-      paymentMethod:
-        order.payments[0]?.payment_method_name
-        || (order.payments[0]?.payment_method_code ? paymentMethodMap.get(String(order.payments[0].payment_method_code)) : "")
-        || "",
+      paymentMethod: order.payments?.[0]?.payment_method_name || "",
       paymentStatus: order.payment_status,
       kitchenStatus: order.kitchen_status,
       responsibleId: order.responsible_id,
-      responsible: order.responsible_id ? `User #${order.responsible_id}` : "",
+      responsible: order.responsible_name || (order.responsible_id ? `User #${order.responsible_id}` : ""),
     }));
   }
 
@@ -359,13 +338,15 @@ class Store {
       id: order.id,
       orderId: order.id,
       orderNumber: order.order_number,
+      branchId: order.branch_id,
+      branchName: order.branch_name || "",
       tableNumber: tableNumberValue(order.table_name),
-      items: order.items.map((item) => ({
+      items: (order.items || []).map((item) => ({
         id: item.id,
         name: item.name,
         qty: item.quantity,
         prepared: item.kitchen_done,
-        emoji: "🍽️",
+        emoji: "IT",
       })),
       stage: order.kitchen_status === "preparing" ? "preparing" : order.kitchen_status === "completed" ? "completed" : "to_cook",
       createdAt: order.created_at,
@@ -376,13 +357,15 @@ class Store {
   _normalizeCustomerOrders(orders) {
     return orders.map((order) => ({
       id: order.id,
+      branchId: order.branch_id,
+      branchName: order.branch_name || "",
       tableNumber: tableNumberValue(order.table_name),
       status: order.payment_status === "paid" ? "paid" : order.kitchen_status === "preparing" || order.kitchen_status === "to_cook" ? "in_progress" : "open",
-      items: order.items.map((item) => ({
+      items: (order.items || []).map((item) => ({
         name: item.name,
         qty: item.quantity,
         price: Number(item.total_price) / Math.max(item.quantity, 1),
-        emoji: "🍽️",
+        emoji: "IT",
       })),
       subtotal: Number(order.subtotal),
       tax: Number(order.tax_total),
@@ -392,25 +375,109 @@ class Store {
     }));
   }
 
+  async initialize() {
+    this.set("settings", { storeName: "Odoo POS Cafe", currency: "₹" });
+    this.set("paymentMethods", this.getFixedPaymentMethods());
+    if (!this.getToken()) return;
+
+    try {
+      const me = await this._api("/me");
+      this._applyCurrentUser(me);
+      await this.fetchBranches();
+      await this.syncProtectedData();
+    } catch {
+      this.logout();
+    }
+  }
+
+  async login(username, password) {
+    const normalizedUsername = String(username || "").trim();
+    const response = await this._api("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ username: normalizedUsername, password }),
+    }, false);
+    this.setToken(response.access_token);
+    this.set("last_username", normalizedUsername);
+    this._applyCurrentUser(response.user);
+    await this.fetchBranches();
+    await this.syncProtectedData();
+    return this.getCurrentUser();
+  }
+
+  async signup() {
+    throw new Error("Sign up is disabled. Ask an admin to create your account.");
+  }
+
+  logout() {
+    this.setToken("");
+    [
+      "currentUser",
+      "activeSession",
+      "activeBranchId",
+      "branches",
+      "users",
+      "products",
+      "productsRaw",
+      "categories",
+      "categoriesMeta",
+      "paymentMethods",
+      "floors",
+      "tables",
+      "terminals",
+      "sessions",
+      "orders",
+      "kitchenOrders",
+      "customerOrders",
+      "reports_raw",
+      "currentOrder",
+    ].forEach((key) => this.remove(key));
+  }
+
   async syncProtectedData() {
     if (!this.getToken()) return;
-    const [categoriesMeta, productsRaw, floorsRaw, terminals, sessionsRaw, ordersRaw, reportsRaw] = await Promise.all([
+
+    const user = this.getCurrentUser();
+    const branches = this.getAll("branches");
+    const activeBranchId = this._ensureActiveBranch(branches);
+    if (!activeBranchId) throw new Error("No active branch available");
+    const role = String(user?.role || "").toLowerCase();
+
+    if (role === "chef") {
+      this.set("categoriesMeta", []);
+      this.set("categories", []);
+      this.set("productsRaw", []);
+      this.set("products", []);
+      this.set("floors", []);
+      this.set("tables", []);
+      this.set("terminals", []);
+      this.set("sessions", []);
+      this.set("orders", []);
+      this.set("reports_raw", null);
+      this.set("paymentMethods", this.getFixedPaymentMethods());
+      this.setActiveSession(null);
+      await this.syncPublicData();
+      return;
+    }
+
+    const branchQueryPath = (path) => this._withBranch(path, activeBranchId);
+    const requests = [
       this._api("/categories"),
       this._api("/products"),
-      this._api("/floors"),
-      this._api("/terminals"),
-      this._api("/sessions"),
-      this._api("/orders"),
-      this._api("/reports"),
-    ]);
+      this._api(branchQueryPath("/floors")),
+      this._api(branchQueryPath("/terminals")),
+      this._api(branchQueryPath("/sessions")),
+      this._api(branchQueryPath("/orders")),
+      role === "admin" ? this._api(branchQueryPath("/reports")) : Promise.resolve(null),
+    ];
+
+    const [categoriesMeta, productsRaw, floorsRaw, terminals, sessionsRaw, ordersRaw, reportsRaw] = await Promise.all(requests);
 
     const products = this._normalizeProducts(productsRaw, categoriesMeta);
     const paymentMethods = this.getFixedPaymentMethods();
     const floors = this._normalizeFloors(floorsRaw);
     const tables = this._normalizeTables(floorsRaw);
-    const orders = this._normalizeOrders(ordersRaw, paymentMethods);
+    const orders = this._normalizeOrders(ordersRaw);
     const sessions = this._normalizeSessions(sessionsRaw, ordersRaw);
-
     const activeOpenSession = sessions.find((session) => session.status === "open") || null;
 
     this.set("categoriesMeta", categoriesMeta);
@@ -431,9 +498,11 @@ class Store {
   }
 
   async syncPublicData() {
+    const branchId = this.getActiveBranchId();
+    const branchQueryPath = (path) => this._withBranch(path, branchId);
     const [kitchenOrdersRaw, customerOrdersRaw] = await Promise.all([
-      this._api("/kitchen/orders", {}, false),
-      this._api("/customer-display", {}, false),
+      this._api(branchQueryPath("/kitchen/orders"), {}, false),
+      this._api(branchQueryPath("/customer-display"), {}, false),
     ]);
     this.set("kitchenOrders", this._normalizeKitchenOrders(kitchenOrdersRaw));
     this.set("customerOrders", this._normalizeCustomerOrders(customerOrdersRaw));
@@ -455,6 +524,36 @@ class Store {
     return this._categoryIdByName(trimmedName);
   }
 
+  async createBranch(branch) {
+    await this._api("/branches", {
+      method: "POST",
+      body: JSON.stringify({
+        name: branch.name,
+        code: branch.code,
+        address: branch.address || "",
+        phone: branch.phone || "",
+        is_active: branch.is_active !== false,
+      }),
+    });
+    await this.fetchBranches();
+    await this.syncProtectedData();
+  }
+
+  async updateBranch(branchId, branch) {
+    await this._api(`/branches/${branchId}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        name: branch.name,
+        code: branch.code,
+        address: branch.address || "",
+        phone: branch.phone || "",
+        is_active: branch.is_active !== false,
+      }),
+    });
+    await this.fetchBranches();
+    await this.syncProtectedData();
+  }
+
   async fetchUsers() {
     const users = await this._api("/users");
     this.set("users", users);
@@ -465,6 +564,7 @@ class Store {
     const created = await this._api("/users", {
       method: "POST",
       body: JSON.stringify({
+        branch_id: user.branch_id,
         name: user.name,
         username: user.username,
         email: user.email,
@@ -480,6 +580,7 @@ class Store {
     const updated = await this._api(`/users/${userId}`, {
       method: "PATCH",
       body: JSON.stringify({
+        branch_id: user.branch_id,
         name: user.name,
         username: user.username,
         email: user.email,
@@ -556,7 +657,7 @@ class Store {
   }
 
   async createFloor(name) {
-    await this._api("/floors", { method: "POST", body: JSON.stringify({ name }) });
+    await this._api(this._withBranch("/floors"), { method: "POST", body: JSON.stringify({ name }) });
     await this.syncProtectedData();
   }
 
@@ -602,7 +703,7 @@ class Store {
     let terminals = this.get("terminals", []);
     if (terminals.length > 0) return terminals[0];
 
-    await this._api("/terminals", {
+    await this._api(this._withBranch("/terminals"), {
       method: "POST",
       body: JSON.stringify({
         name: "Main Terminal",
@@ -646,8 +747,10 @@ class Store {
     const existing = orderDraft?.backendId ? this.find("orders", orderDraft.backendId) : null;
     if (existing) return existing;
     const products = this.get("products", []);
+    const activeSession = this.getActiveSession();
+    if (!activeSession?.id) throw new Error("No active session found");
     const payload = {
-      session_id: this.getActiveSession()?.id,
+      session_id: activeSession.id,
       table_id: orderDraft.tableId,
       source: "pos",
       items: (orderDraft.items || []).map((item) => {
@@ -701,12 +804,12 @@ class Store {
   }
 
   async advanceKitchenOrder(orderId) {
-    await this._api(`/kitchen/orders/${orderId}/advance`, { method: "POST" }, false);
+    await this._api(this._withBranch(`/kitchen/orders/${orderId}/advance`), { method: "POST" }, false);
     await this.syncPublicData();
   }
 
   async toggleKitchenItem(itemId) {
-    await this._api(`/kitchen/items/${itemId}/toggle`, { method: "POST" }, false);
+    await this._api(this._withBranch(`/kitchen/items/${itemId}/toggle`), { method: "POST" }, false);
     await this.syncPublicData();
   }
 }

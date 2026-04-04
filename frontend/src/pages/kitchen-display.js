@@ -7,6 +7,7 @@ import { showToast } from "../components/toast.js";
 
 export function renderKitchenDisplay() {
   const app = document.getElementById("app");
+  const activeBranch = store.getAll("branches").find((branch) => String(branch.id) === String(store.getActiveBranchId())) || null;
   let refreshInterval;
 
   function renderTicket(order) {
@@ -65,7 +66,10 @@ export function renderKitchenDisplay() {
     app.innerHTML = `
       <div class="kitchen-layout no-anim">
         <div class="kitchen-topbar">
-          <h1><span class="kitchen-topbar-icon">👨‍🍳</span> Kitchen Display</h1>
+          <div>
+            <h1><span class="kitchen-topbar-icon">Kitchen</span> Kitchen Display</h1>
+            <div style="font-size:var(--fs-sm);color:var(--color-text-muted)">${activeBranch ? `Branch: ${activeBranch.name}` : "Current branch"}</div>
+          </div>
           <div style="display:flex;gap:var(--space-sm)">
             <button class="btn btn-sm btn-ghost" id="kitchen-refresh">Refresh</button>
             <button class="btn btn-sm btn-ghost" id="kitchen-back">Back</button>

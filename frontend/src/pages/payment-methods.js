@@ -1,103 +1,108 @@
-/* ==========================================================================
-   Payment Methods — Cash / Digital / UPI configuration
-   ========================================================================== */
+import store from "../store.js";
+import { showToast } from "../components/toast.js";
 
-import store from '../store.js';
-import { showToast } from '../components/toast.js';
+function methodDescription(type) {
+  if (type === "cash") return "Accept cash payments at the register. Change will be calculated automatically.";
+  if (type === "card") return "Accept debit and credit card payments directly at checkout.";
+  return "Generate QR codes for UPI payments so customers can scan and pay quickly.";
+}
+
+function methodTypeLabel(type) {
+  if (type === "cash") return "Cash Payments";
+  if (type === "card") return "Card Payments";
+  return "UPI QR Payments";
+}
 
 export function renderPaymentMethods(container) {
   function render() {
-    const methods = store.getAll('paymentMethods');
+    const methods = store.getAll("paymentMethods");
 
     container.innerHTML = `
       <div class="backend-header">
-        <h1>💳 Payment Methods</h1>
+        <div>
+          <h1>Payment Methods</h1>
+          <div style="font-size:var(--fs-sm);color:var(--color-text-muted)">Fixed methods for checkout: Cash, Card, and UPI</div>
+        </div>
       </div>
       <p style="color:var(--color-text-muted);margin-bottom:var(--space-xl);font-size:var(--fs-sm)">
         Enable or disable payment methods available at checkout. Only enabled methods will appear in the POS terminal.
       </p>
 
       <div class="payment-methods-grid stagger">
-        ${methods.map(m => `
-          <div class="card payment-method-card animate-fadeInUp" data-id="${m.id}">
+        ${methods.map((method) => `
+          <div class="card payment-method-card animate-fadeInUp" data-id="${method.id}">
             <div class="payment-method-header">
               <div class="payment-method-info">
-                <div class="payment-method-icon">${m.icon}</div>
+                <div class="payment-method-icon">${method.icon}</div>
                 <div>
-                  <div class="payment-method-name">${m.name}</div>
-                  <div class="payment-method-type">${m.type === 'cash' ? 'Cash Payments' : m.type === 'card' ? 'Card Payments' : 'UPI QR Payments'}</div>
+                  <div class="payment-method-name">${method.name}</div>
+                  <div class="payment-method-type">${methodTypeLabel(method.type)}</div>
                 </div>
               </div>
-              <label class="toggle">
-                <input type="checkbox" ${m.enabled ? 'checked' : ''} data-toggle="${m.id}" />
-                <span class="toggle-slider"></span>
-              </label>
+              <div class="payment-method-toggle-wrap">
+                <span class="badge ${method.enabled ? "badge-success" : "badge-warning"}">${method.enabled ? "Enabled" : "Disabled"}</span>
+                <label class="toggle">
+                  <input type="checkbox" ${method.enabled ? "checked" : ""} data-toggle="${method.id}" />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
             </div>
 
-            ${m.type === 'cash' ? `
-              <p style="font-size:var(--fs-sm);color:var(--color-text-muted);margin-top:var(--space-sm)">
-                Accept cash payments at the register. Change will be calculated automatically.
-              </p>
-            ` : ''}
+            <p class="payment-method-description">${methodDescription(method.type)}</p>
 
-            ${m.type === 'card' ? `
-              <p style="font-size:var(--fs-sm);color:var(--color-text-muted);margin-top:var(--space-sm)">
-                Accept debit and credit card payments at checkout.
-              </p>
-            ` : ''}
-
-            ${m.type === 'upi' ? `
-              <p style="font-size:var(--fs-sm);color:var(--color-text-muted);margin-top:var(--space-sm)">
-                Generate QR codes for UPI payments. Customers scan with any UPI app.
-              </p>
-              ${m.enabled ? `
-                <div class="upi-config">
-                  <div class="form-group">
-                    <label class="form-label">UPI ID</label>
-                    <input type="text" class="form-input" id="upi-id-input" value="${m.upiId || ''}" placeholder="example@ybl.com" />
-                  </div>
-                  <button class="btn btn-sm btn-primary" id="save-upi-btn">Save UPI ID</button>
-                </div>
-              ` : ''}
-            ` : ''}
+            ${
+              method.type === "upi"
+                ? method.enabled
+                  ? `
+                    <div class="upi-config">
+                      <div class="form-group">
+                        <label class="form-label">UPI ID</label>
+                        <input type="text" class="form-input" id="upi-id-input" value="${method.upiId || ""}" placeholder="example@ybl.com" />
+                      </div>
+                      <div class="payment-method-actions">
+                        <button class="btn btn-sm btn-primary" id="save-upi-btn">Save UPI ID</button>
+                      </div>
+                    </div>
+                  `
+                  : `<div class="payment-method-note">Enable UPI to configure your QR payment ID.</div>`
+                : ""
+            }
           </div>
-        `).join('')}
+        `).join("")}
       </div>
     `;
 
-    // Toggle handlers
-    container.querySelectorAll('[data-toggle]').forEach(input => {
-      input.addEventListener('change', async (e) => {
-        const id = e.target.dataset.toggle;
+    container.querySelectorAll("[data-toggle]").forEach((input) => {
+      input.addEventListener("change", async (event) => {
+        const id = event.target.dataset.toggle;
         try {
-          await store.updatePaymentMethod(id, { enabled: e.target.checked });
-          showToast(`Payment method ${e.target.checked ? 'enabled' : 'disabled'}`, 'info');
+          await store.updatePaymentMethod(id, { enabled: event.target.checked });
+          showToast(`Payment method ${event.target.checked ? "enabled" : "disabled"}`, "info");
           render();
         } catch (error) {
-          e.target.checked = !e.target.checked;
-          showToast(error.message, 'error');
+          event.target.checked = !event.target.checked;
+          showToast(error.message, "error");
         }
       });
     });
 
-    // UPI save
-    document.getElementById('save-upi-btn')?.addEventListener('click', async () => {
-      const upiId = document.getElementById('upi-id-input').value.trim();
+    document.getElementById("save-upi-btn")?.addEventListener("click", async () => {
+      const upiId = document.getElementById("upi-id-input")?.value.trim();
       if (!upiId) {
-        showToast('Please enter a UPI ID', 'error');
+        showToast("Please enter a UPI ID", "error");
         return;
       }
-      const upiMethod = methods.find(m => m.type === 'upi');
+      const upiMethod = methods.find((method) => method.type === "upi");
       if (!upiMethod) {
-        showToast('UPI method not found', 'error');
+        showToast("UPI method not found", "error");
         return;
       }
       try {
         await store.updatePaymentMethod(upiMethod.id, { upiId });
-        showToast('UPI ID saved!', 'success');
+        showToast("UPI ID saved", "success");
         render();
       } catch (error) {
-        showToast(error.message, 'error');
+        showToast(error.message, "error");
       }
     });
   }

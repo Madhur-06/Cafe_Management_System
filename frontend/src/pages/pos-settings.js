@@ -9,6 +9,8 @@ import { showToast } from '../components/toast.js';
 export function renderPosSettings(container) {
   function render() {
     const sessions = store.getAll('sessions');
+    const branches = store.getAll('branches');
+    const activeBranch = branches.find((branch) => String(branch.id) === String(store.getActiveBranchId())) || null;
     const activeSession = store.getActiveSession();
     const lastSession = sessions[sessions.length - 1];
     const user = store.getCurrentUser();
@@ -22,7 +24,10 @@ export function renderPosSettings(container) {
 
     container.innerHTML = `
       <div class="backend-header">
-        <h1>🖥️ POS Terminal</h1>
+        <div>
+          <h1>POS Terminal</h1>
+          <div style="font-size:var(--fs-sm);color:var(--color-text-muted)">${activeBranch ? `Branch: ${activeBranch.name}` : "Current branch"}</div>
+        </div>
       </div>
 
       <div class="pos-terminal-card card" style="margin:0 auto">

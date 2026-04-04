@@ -30,6 +30,7 @@ export function renderReports(container) {
   };
 
   let selectedOrderId = null;
+  const activeBranchId = store.getActiveBranchId();
 
   function getFilteredOrders() {
     let orders = [...store.getAll("orders")];
@@ -102,6 +103,8 @@ export function renderReports(container) {
   }
 
   function render() {
+    const branches = store.getAll("branches");
+    const activeBranch = branches.find((branch) => String(branch.id) === String(activeBranchId)) || null;
     const sessions = store.getAll("sessions");
     const products = store.getAll("products");
     const allOrders = store.getAll("orders");
@@ -120,7 +123,10 @@ export function renderReports(container) {
 
     container.innerHTML = `
       <div class="reports-header">
-        <h1>Reports and Dashboard</h1>
+        <div>
+          <h1>Reports and Dashboard</h1>
+          <div style="font-size:var(--fs-sm);color:var(--color-text-muted)">${activeBranch ? `Branch: ${activeBranch.name}` : "Current branch"}</div>
+        </div>
         <div class="reports-header-actions">
           <button class="btn btn-ghost btn-sm" id="export-csv-btn">CSV</button>
           <button class="btn btn-ghost btn-sm" id="export-xls-btn">XLS</button>
