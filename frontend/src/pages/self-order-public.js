@@ -2,10 +2,12 @@ import store from "../store.js";
 import router from "../router.js";
 import { showToast } from "../components/toast.js";
 import { icon } from "../utils/icons.js";
+import { generateUPIQR } from "../utils/qr.js";
 
-export async function renderSelfOrderPublic(token) {
+export async function renderSelfOrderPublic(token, query = {}) {
   const app = document.getElementById("app");
   const currency = store.get("settings")?.currency || "₹";
+  const upiId = String(query?.upi || "").trim();
 
   app.innerHTML = `
     <div class="payment-layout">
@@ -21,8 +23,15 @@ export async function renderSelfOrderPublic(token) {
   try {
     const tokenData = await store.fetchSelfOrderToken(token);
     let cartItems = [];
+    let submittedOrder = null;
+    let submittedTotal = 0;
 
     const render = () => {
+      if (submittedOrder) {
+        renderPaymentStep();
+        return;
+      }
+
       const products = tokenData.products || [];
       const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
       const tax = cartItems.reduce((sum, item) => sum + ((item.price * item.qty * (item.tax || 0)) / 100), 0);
@@ -151,16 +160,72 @@ export async function renderSelfOrderPublic(token) {
       document.getElementById("public-submit-order")?.addEventListener("click", async () => {
         try {
           const response = await store.submitSelfOrder(token, cartItems);
+          showToast(`Order ${response.order_number} sent to kitchen`, "success");
+          submittedOrder = response;
+          submittedTotal = total;
           cartItems = [];
           render();
-          showToast(`Order ${response.order_number} sent to kitchen`, "success");
-          app.querySelector(".card")?.insertAdjacentHTML(
-            "afterbegin",
-            `<div class="badge badge-success" style="margin-bottom:var(--space-md);display:inline-flex">${icon("circleCheck", "", "Order sent")}Order sent to kitchen</div>`
-          );
         } catch (error) {
           showToast(error.message, "error");
         }
+      });
+    };
+
+    const renderPaymentStep = () => {
+      const paymentAvailable = Boolean(upiId);
+
+      app.innerHTML = `
+        <div class="payment-layout" style="justify-content:flex-start;padding:var(--space-lg)">
+          <div class="card" style="width:min(760px, 100%);margin:0 auto;text-align:center">
+            <div class="badge badge-success" style="margin-bottom:var(--space-md);display:inline-flex">${icon("circleCheck", "", "Order sent")}Order ${submittedOrder.order_number} sent to kitchen</div>
+            <h1 style="font-size:var(--fs-2xl);margin-bottom:var(--space-xs)">Complete Payment</h1>
+            <p style="font-size:var(--fs-sm);color:var(--color-text-muted);margin-bottom:var(--space-lg)">
+              ${paymentAvailable ? "Scan the UPI QR below to pay for your order now." : "Your order has been placed. Payment will be collected by staff."}
+            </p>
+
+            <div class="payment-amount" style="margin-bottom:var(--space-xl)">
+              <div class="payment-amount-label">Amount To Pay</div>
+              <div class="payment-amount-value">${currency}${submittedTotal.toFixed(2)}</div>
+            </div>
+
+            ${paymentAvailable ? `
+              <div class="qr-payment-screen">
+                <div class="qr-canvas-wrapper">
+                  <canvas id="self-order-upi-qr"></canvas>
+                </div>
+                <div class="qr-amount">UPI ID: ${upiId}</div>
+                <div style="display:flex;justify-content:center;gap:var(--space-sm);flex-wrap:wrap;margin-top:var(--space-lg)">
+                  <button class="btn btn-primary" id="self-order-paid-btn" type="button">I Have Paid</button>
+                  <button class="btn btn-ghost" id="self-order-done-btn" type="button">Done</button>
+                </div>
+                <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--space-md)">
+                  Staff will confirm the payment in the POS.
+                </p>
+              </div>
+            ` : `
+              <div style="display:flex;justify-content:center">
+                <button class="btn btn-primary" id="self-order-done-btn" type="button">Done</button>
+              </div>
+            `}
+          </div>
+        </div>
+      `;
+
+      const qrCanvas = document.getElementById("self-order-upi-qr");
+      if (paymentAvailable && qrCanvas) {
+        generateUPIQR(qrCanvas, {
+          upiId,
+          amount: submittedTotal,
+          payeeName: tokenData.branch_name || "POS Cafe",
+        }).catch(() => showToast("Failed to generate payment QR", "error"));
+      }
+
+      document.getElementById("self-order-paid-btn")?.addEventListener("click", () => {
+        showToast("Payment noted. Staff will verify it shortly.", "success");
+      });
+
+      document.getElementById("self-order-done-btn")?.addEventListener("click", () => {
+        router.navigate("/login");
       });
     };
 

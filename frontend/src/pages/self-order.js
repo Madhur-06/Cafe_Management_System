@@ -11,11 +11,13 @@ export function renderSelfOrder(container) {
   const tables = store.getAll("tables").filter((table) => table.active);
   const session = store.getActiveSession();
   const activeBranch = store.getAll("branches").find((branch) => String(branch.id) === String(store.getActiveBranchId())) || null;
+  const upiMethod = store.getAll("paymentMethods").find((method) => method.type === "upi" && method.enabled && method.upiId);
   let selectedTable = null;
   let generatedToken = null;
 
   function selfOrderUrl(token) {
-    return `${window.location.origin}${window.location.pathname}#/self-order/${token}`;
+    const base = `${window.location.origin}${window.location.pathname}#/self-order/${token}`;
+    return upiMethod?.upiId ? `${base}?upi=${encodeURIComponent(upiMethod.upiId)}` : base;
   }
 
   function render() {
@@ -89,6 +91,7 @@ export function renderSelfOrder(container) {
               </p>
               <div style="margin-top:var(--space-md);display:flex;flex-direction:column;gap:var(--space-sm)">
                 <div class="badge badge-info" style="display:inline-flex;align-self:center">${activeBranch?.name || "Current branch"}</div>
+                ${upiMethod?.upiId ? `<div style="font-size:var(--fs-xs);color:var(--color-text-muted)">UPI payment enabled for this QR</div>` : `<div style="font-size:var(--fs-xs);color:var(--color-text-muted)">UPI payment is not configured. Customer can still place the order.</div>`}
                 <div style="font-size:var(--fs-xs);color:var(--color-text-muted);word-break:break-all">${tokenUrl}</div>
                 <div style="display:flex;gap:var(--space-sm);justify-content:center;flex-wrap:wrap">
                   <button class="btn btn-sm btn-ghost" id="copy-token-link" type="button">Copy Link</button>

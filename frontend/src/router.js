@@ -30,11 +30,14 @@ class Router {
 
   _resolve() {
     const hash = window.location.hash.slice(1) || '/login';
-    const { handler, params } = this._match(hash);
+    const [pathOnly, queryString = ''] = hash.split('?');
+    const query = Object.fromEntries(new URLSearchParams(queryString));
+    const { handler, params } = this._match(pathOnly);
+    const routeParams = { ...params, query };
 
     if (this.beforeEach) {
-      const redirectTo = this.beforeEach(hash, params);
-      if (redirectTo && redirectTo !== hash) {
+      const redirectTo = this.beforeEach(pathOnly, routeParams);
+      if (redirectTo && redirectTo !== pathOnly) {
         this.navigate(redirectTo);
         return;
       }
@@ -42,7 +45,7 @@ class Router {
 
     this.currentRoute = hash;
     if (handler) {
-      handler(params);
+      handler(routeParams);
     }
   }
 

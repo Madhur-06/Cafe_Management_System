@@ -10,7 +10,12 @@ export function renderKitchenDisplay() {
   const app = document.getElementById("app");
   const activeBranch = store.getAll("branches").find((branch) => String(branch.id) === String(store.getActiveBranchId())) || null;
   let refreshInterval;
-  const dismissedCompletedIds = new Set();
+  const dismissedStorageKey = `kitchen_dismissed_completed_${activeBranch?.id || "default"}`;
+  const dismissedCompletedIds = new Set(JSON.parse(localStorage.getItem(dismissedStorageKey) || "[]"));
+
+  function persistDismissedCompleted() {
+    localStorage.setItem(dismissedStorageKey, JSON.stringify([...dismissedCompletedIds]));
+  }
 
   function updateThemeButton() {
     const themeButton = document.getElementById("kitchen-theme-toggle");
@@ -70,6 +75,7 @@ export function renderKitchenDisplay() {
       kitchenOrders
         .filter((order) => order.stage === "completed")
         .forEach((order) => dismissedCompletedIds.add(String(order.id)));
+      persistDismissedCompleted();
     }
     kitchenOrders = kitchenOrders.filter((order) => !(order.stage === "completed" && dismissedCompletedIds.has(String(order.id))));
     const columns = {
