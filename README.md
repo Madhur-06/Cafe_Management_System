@@ -25,7 +25,7 @@ Simplest Windows setup:
 4. Start backend:
    `python -m uvicorn app.main:app --reload --app-dir backend`
 5. Start frontend:
-   `cmd /c npm run dev --prefix frontend`
+   `cmd /c npm run dev --prefix`
 
 Manual setup is still available if you prefer:
 
