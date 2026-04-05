@@ -184,6 +184,7 @@ def ensure_admin_user(db: Session) -> None:
 
 def ensure_branches(db: Session) -> None:
     db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS branch_id INTEGER REFERENCES branches(id)"))
+    db.execute(text("ALTER TABLE products ADD COLUMN IF NOT EXISTS branch_id INTEGER REFERENCES branches(id)"))
     db.execute(text("ALTER TABLE floors ADD COLUMN IF NOT EXISTS branch_id INTEGER REFERENCES branches(id)"))
     db.execute(text("ALTER TABLE restaurant_tables ADD COLUMN IF NOT EXISTS branch_id INTEGER REFERENCES branches(id)"))
     db.execute(text("ALTER TABLE pos_terminals ADD COLUMN IF NOT EXISTS branch_id INTEGER REFERENCES branches(id)"))
@@ -212,6 +213,7 @@ def ensure_branches(db: Session) -> None:
 
     branch_id = default_branch.id
     db.execute(text("UPDATE users SET branch_id = :branch_id WHERE branch_id IS NULL AND lower(role) <> 'admin'"), {"branch_id": branch_id})
+    db.execute(text("UPDATE products SET branch_id = :branch_id WHERE branch_id IS NULL"), {"branch_id": branch_id})
     db.execute(text("UPDATE floors SET branch_id = :branch_id WHERE branch_id IS NULL"), {"branch_id": branch_id})
     db.execute(
         text(
@@ -394,7 +396,9 @@ def sync_product_variants(product: Product, variant_payloads: list[dict]) -> Non
         product.variants_rel.append(variant)
 
 
-def apply_product_payload(product: Product, payload: ProductInput) -> None:
+def apply_product_payload(product: Product, payload: ProductInput, branch_id: int | None = None) -> None:
+    if branch_id is not None:
+        product.branch_id = branch_id
     product.name = payload.name
     product.category_id = payload.category_id
     product.base_price = Decimal(str(payload.price))
@@ -480,6 +484,8 @@ def build_order(db: Session, payload: OrderCreateInput, responsible_id: int | No
         product = db.get(Product, item.product_id)
         if not product:
             raise HTTPException(status_code=404, detail=f"Product {item.product_id} not found")
+        if product.branch_id != session.branch_id:
+            raise HTTPException(status_code=400, detail=f"Product {product.name} does not belong to the session branch")
         line_total = Decimal(str(product.base_price)) * item.quantity
         line_tax = line_total * Decimal(str(product.tax_rate / 100))
         subtotal += line_total
@@ -752,16 +758,24 @@ def create_category(payload: CategoryInput, current_user: User = Depends(require
 
 
 @app.get("/products", response_model=list[ProductOut])
-def list_products(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> list[Product]:
-    return db.query(Product).options(joinedload(Product.variants_rel).joinedload(ProductVariant.values)).order_by(Product.name).all()
+def list_products(branch_id: int | None = None, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> list[Product]:
+    branch = resolve_branch_for_user(db, current_user, branch_id)
+    return (
+        db.query(Product)
+        .options(joinedload(Product.branch), joinedload(Product.variants_rel).joinedload(ProductVariant.values))
+        .filter(Product.branch_id == branch.id)
+        .order_by(Product.name)
+        .all()
+    )
 
 
 @app.post("/products", response_model=ProductOut)
-def create_product(payload: ProductInput, current_user: User = Depends(require_role("admin")), db: Session = Depends(get_db)) -> Product:
+def create_product(payload: ProductInput, branch_id: int | None = None, current_user: User = Depends(require_role("admin")), db: Session = Depends(get_db)) -> Product:
+    branch = resolve_branch_for_user(db, current_user, branch_id)
     if not db.get(Category, payload.category_id):
         raise HTTPException(status_code=404, detail="Category not found")
-    product = Product()
-    apply_product_payload(product, payload)
+    product = Product(branch_id=branch.id)
+    apply_product_payload(product, payload, branch.id)
     db.add(product)
     db.commit()
     db.refresh(product)
@@ -778,9 +792,10 @@ def update_product(product_id: int, payload: ProductInput, current_user: User = 
     )
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
+    ensure_branch_access(current_user, product.branch_id)
     if not db.get(Category, payload.category_id):
         raise HTTPException(status_code=404, detail="Category not found")
-    apply_product_payload(product, payload)
+    apply_product_payload(product, payload, product.branch_id)
     db.commit()
     db.refresh(product)
     return product
@@ -791,6 +806,7 @@ def delete_product(product_id: int, current_user: User = Depends(require_role("a
     product = db.get(Product, product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
+    ensure_branch_access(current_user, product.branch_id)
     if db.query(OrderItem).filter(OrderItem.product_id == product_id).first():
         raise HTTPException(status_code=400, detail="Product cannot be deleted because it is used in orders")
     db.delete(product)
@@ -1276,8 +1292,8 @@ def get_self_order_token(token: str, db: Session = Depends(get_db)) -> dict:
     table = db.get(RestaurantTable, self_token.table_id)
     products = (
         db.query(Product)
-        .options(joinedload(Product.variants_rel).joinedload(ProductVariant.values))
-        .filter(Product.is_active.is_(True))
+        .options(joinedload(Product.branch), joinedload(Product.variants_rel).joinedload(ProductVariant.values))
+        .filter(Product.branch_id == self_token.branch_id, Product.is_active.is_(True))
         .order_by(Product.name)
         .all()
     )

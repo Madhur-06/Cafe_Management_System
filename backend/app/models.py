@@ -27,6 +27,7 @@ class Branch(Base, TimestampMixin):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     users: Mapped[list["User"]] = relationship(back_populates="branch")
+    products: Mapped[list["Product"]] = relationship(back_populates="branch")
     floors: Mapped[list["Floor"]] = relationship(back_populates="branch")
     tables: Mapped[list["RestaurantTable"]] = relationship(back_populates="branch")
     terminals: Mapped[list["POSTerminal"]] = relationship(back_populates="branch")
@@ -70,6 +71,7 @@ class Product(Base, TimestampMixin):
     __tablename__ = "products"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    branch_id: Mapped[int | None] = mapped_column(ForeignKey("branches.id"), nullable=True)
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"))
     name: Mapped[str] = mapped_column(String(120), index=True)
     description: Mapped[str] = mapped_column(Text, default="")
@@ -80,6 +82,7 @@ class Product(Base, TimestampMixin):
     send_to_kitchen: Mapped[bool] = mapped_column(Boolean, default=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
+    branch: Mapped["Branch | None"] = relationship(back_populates="products")
     category: Mapped["Category"] = relationship(back_populates="products")
     variants_rel: Mapped[list["ProductVariant"]] = relationship(
         back_populates="product",
@@ -123,6 +126,10 @@ class Product(Base, TimestampMixin):
             }
             for variant in self.variants_rel
         ]
+
+    @property
+    def branch_name(self) -> str | None:
+        return self.branch.name if self.branch else None
 
 
 class ProductVariant(Base, TimestampMixin):

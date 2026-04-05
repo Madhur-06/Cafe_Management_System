@@ -211,7 +211,8 @@ class Store {
       this._ensureActiveBranch();
       return this.getActiveBranchId();
     }
-    this.set("activeBranchId", branchId || null);
+    const normalizedBranchId = branchId == null ? null : Number(branchId);
+    this.set("activeBranchId", Number.isNaN(normalizedBranchId) ? branchId : normalizedBranchId);
     this.remove("currentOrder");
     this.setActiveSession(null);
     await this.syncProtectedData();
@@ -238,6 +239,8 @@ class Store {
     const categoryMap = new Map(categoriesMeta.map((category) => [String(category.id), category.name]));
     return products.map((product) => ({
       ...product,
+      branchId: product.branch_id ?? null,
+      branchName: product.branch_name || "",
       category: categoryMap.get(String(product.category_id)) || "Uncategorized",
       emoji: CATEGORY_BADGES[categoryMap.get(String(product.category_id))] || "PR",
       price: Number(product.price),
@@ -462,7 +465,7 @@ class Store {
     const branchQueryPath = (path) => this._withBranch(path, activeBranchId);
     const requests = [
       this._api("/categories"),
-      this._api("/products"),
+      this._api(branchQueryPath("/products")),
       this._api(branchQueryPath("/floors")),
       this._api(branchQueryPath("/terminals")),
       this._api(branchQueryPath("/sessions")),
@@ -609,7 +612,7 @@ class Store {
   async createProduct(product) {
     const categoryId = this._categoryIdByName(product.category);
     if (!categoryId) throw new Error("Category not found");
-    await this._api("/products", {
+    await this._api(this._withBranch("/products"), {
       method: "POST",
       body: JSON.stringify({
         name: product.name,
@@ -799,7 +802,11 @@ class Store {
 
   async fetchSelfOrderToken(token) {
     if (!token) throw new Error("Token is required");
-    return this._api(`/self-order/tokens/${encodeURIComponent(token)}`, {}, false);
+    const payload = await this._api(`/self-order/tokens/${encodeURIComponent(token)}`, {}, false);
+    return {
+      ...payload,
+      products: this._normalizeProducts(payload.products || [], this.get("categoriesMeta", [])),
+    };
   }
 
   async submitSelfOrder(token, items) {

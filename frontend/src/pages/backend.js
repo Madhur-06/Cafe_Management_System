@@ -103,8 +103,12 @@ export function renderBackend(section = 'products') {
 
   document.getElementById('branch-switcher')?.addEventListener('change', async (event) => {
     try {
-      await store.setActiveBranch(event.target.value);
+      const nextBranchId = Number(event.target.value);
+      await store.setActiveBranch(Number.isNaN(nextBranchId) ? event.target.value : nextBranchId);
       renderBackend(section);
+      if (window.location.hash !== `#/backend/${section}`) {
+        router.navigate(`#/backend/${section}`);
+      }
     } catch (error) {
       showToast(error.message, 'error');
     }

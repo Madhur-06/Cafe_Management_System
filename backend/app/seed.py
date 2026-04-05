@@ -32,95 +32,27 @@ def seed_database(db: Session) -> None:
 
     now = datetime.utcnow()
 
-    branches = [
-        Branch(name="Main Branch", code="MAIN", address="MG Road, Bengaluru", phone="+91-9876543210", is_active=True),
-        Branch(name="Downtown Branch", code="DTWN", address="Church Street, Bengaluru", phone="+91-9876543211", is_active=True),
-        Branch(name="Airport Branch", code="AIR", address="Airport Road, Bengaluru", phone="+91-9876543212", is_active=True),
-    ]
-    db.add_all(branches)
+    branches = {
+        "main": _get_or_create_branch(db, name="Main Branch", code="MAIN", address="MG Road, Bengaluru", phone="+91-9876543210"),
+        "downtown": _get_or_create_branch(db, name="Downtown Branch", code="DTWN", address="Church Street, Bengaluru", phone="+91-9876543211"),
+        "airport": _get_or_create_branch(db, name="Airport Branch", code="AIR", address="Airport Road, Bengaluru", phone="+91-9876543212"),
+    }
     db.flush()
 
-    admin = _get_or_create_user(
-        db,
-        name="System Admin",
-        username="admin",
-        email="admin@poscafe.local",
-        password="admin123",
-        role="admin",
-        branch_id=None,
-    )
-    main_staff = _get_or_create_user(
-        db,
-        name="Riya Sharma",
-        username="mainstaff",
-        email="riya.main@poscafe.local",
-        password="staff123",
-        role="staff",
-        branch_id=branches[0].id,
-    )
-    downtown_staff = _get_or_create_user(
-        db,
-        name="Arjun Mehta",
-        username="downtownstaff",
-        email="arjun.downtown@poscafe.local",
-        password="staff123",
-        role="staff",
-        branch_id=branches[1].id,
-    )
-    main_chef = _get_or_create_user(
-        db,
-        name="Chef Neha",
-        username="mainchef",
-        email="chef.main@poscafe.local",
-        password="chef123",
-        role="chef",
-        branch_id=branches[0].id,
-    )
-    downtown_chef = _get_or_create_user(
-        db,
-        name="Chef Kabir",
-        username="downtownchef",
-        email="chef.downtown@poscafe.local",
-        password="chef123",
-        role="chef",
-        branch_id=branches[1].id,
-    )
-    airport_staff = _get_or_create_user(
-        db,
-        name="Sneha Iyer",
-        username="airportstaff",
-        email="sneha.airport@poscafe.local",
-        password="staff123",
-        role="staff",
-        branch_id=branches[2].id,
-    )
-    airport_chef = _get_or_create_user(
-        db,
-        name="Chef Aman",
-        username="airportchef",
-        email="chef.airport@poscafe.local",
-        password="chef123",
-        role="chef",
-        branch_id=branches[2].id,
-    )
-    main_staff_two = _get_or_create_user(
-        db,
-        name="Karan Verma",
-        username="mainstaff2",
-        email="karan.main@poscafe.local",
-        password="staff123",
-        role="staff",
-        branch_id=branches[0].id,
-    )
-    downtown_staff_two = _get_or_create_user(
-        db,
-        name="Ishita Rao",
-        username="downtownstaff2",
-        email="ishita.downtown@poscafe.local",
-        password="staff123",
-        role="staff",
-        branch_id=branches[1].id,
-    )
+    staff = {
+        "main_1": _get_or_create_user(db, name="Riya Sharma", username="mainstaff", email="riya.main@poscafe.local", password="staff123", role="staff", branch_id=branches["main"].id),
+        "main_2": _get_or_create_user(db, name="Karan Verma", username="mainstaff2", email="karan.main@poscafe.local", password="staff123", role="staff", branch_id=branches["main"].id),
+        "main_3": _get_or_create_user(db, name="Aditi Nair", username="mainstaff3", email="aditi.main@poscafe.local", password="staff123", role="staff", branch_id=branches["main"].id),
+        "downtown_1": _get_or_create_user(db, name="Arjun Mehta", username="downtownstaff", email="arjun.downtown@poscafe.local", password="staff123", role="staff", branch_id=branches["downtown"].id),
+        "downtown_2": _get_or_create_user(db, name="Ishita Rao", username="downtownstaff2", email="ishita.downtown@poscafe.local", password="staff123", role="staff", branch_id=branches["downtown"].id),
+        "downtown_3": _get_or_create_user(db, name="Varun Sethi", username="downtownstaff3", email="varun.downtown@poscafe.local", password="staff123", role="staff", branch_id=branches["downtown"].id),
+        "airport_1": _get_or_create_user(db, name="Sneha Iyer", username="airportstaff", email="sneha.airport@poscafe.local", password="staff123", role="staff", branch_id=branches["airport"].id),
+        "airport_2": _get_or_create_user(db, name="Rahul Jain", username="airportstaff2", email="rahul.airport@poscafe.local", password="staff123", role="staff", branch_id=branches["airport"].id),
+    }
+    _get_or_create_user(db, name="System Admin", username="admin", email="admin@poscafe.local", password="admin123", role="admin", branch_id=None)
+    _get_or_create_user(db, name="Chef Neha", username="mainchef", email="chef.main@poscafe.local", password="chef123", role="chef", branch_id=branches["main"].id)
+    _get_or_create_user(db, name="Chef Kabir", username="downtownchef", email="chef.downtown@poscafe.local", password="chef123", role="chef", branch_id=branches["downtown"].id)
+    _get_or_create_user(db, name="Chef Aman", username="airportchef", email="chef.airport@poscafe.local", password="chef123", role="chef", branch_id=branches["airport"].id)
     db.flush()
 
     categories = {
@@ -132,182 +64,6 @@ def seed_database(db: Session) -> None:
     db.add_all(categories.values())
     db.flush()
 
-    products = {
-        "Bruschetta": Product(
-            category_id=categories["Starters"].id,
-            name="Bruschetta",
-            description="Toasted artisan bread with tomato basil topping.",
-            base_price=Decimal("180.00"),
-            unit="plate",
-            tax_rate=5,
-            image_url=None,
-            send_to_kitchen=True,
-            is_active=True,
-        ),
-        "Paneer Tikka": Product(
-            category_id=categories["Starters"].id,
-            name="Paneer Tikka",
-            description="Smoky paneer cubes with mint chutney.",
-            base_price=Decimal("260.00"),
-            unit="plate",
-            tax_rate=5,
-            image_url=None,
-            send_to_kitchen=True,
-            is_active=True,
-        ),
-        "Farmhouse Pizza": Product(
-            category_id=categories["Mains"].id,
-            name="Farmhouse Pizza",
-            description="Loaded veg pizza with mozzarella and herbs.",
-            base_price=Decimal("420.00"),
-            unit="pizza",
-            tax_rate=5,
-            image_url=None,
-            send_to_kitchen=True,
-            is_active=True,
-        ),
-        "Penne Alfredo": Product(
-            category_id=categories["Mains"].id,
-            name="Penne Alfredo",
-            description="Creamy white sauce pasta with parmesan.",
-            base_price=Decimal("340.00"),
-            unit="bowl",
-            tax_rate=5,
-            image_url=None,
-            send_to_kitchen=True,
-            is_active=True,
-        ),
-        "Masala Lemonade": Product(
-            category_id=categories["Beverages"].id,
-            name="Masala Lemonade",
-            description="Fresh lemonade with house masala.",
-            base_price=Decimal("110.00"),
-            unit="glass",
-            tax_rate=5,
-            image_url=None,
-            send_to_kitchen=False,
-            is_active=True,
-        ),
-        "Cold Coffee": Product(
-            category_id=categories["Beverages"].id,
-            name="Cold Coffee",
-            description="Chilled coffee with whipped cream.",
-            base_price=Decimal("150.00"),
-            unit="glass",
-            tax_rate=5,
-            image_url=None,
-            send_to_kitchen=False,
-            is_active=True,
-        ),
-        "Brownie Sundae": Product(
-            category_id=categories["Desserts"].id,
-            name="Brownie Sundae",
-            description="Warm brownie served with vanilla ice cream.",
-            base_price=Decimal("220.00"),
-            unit="serve",
-            tax_rate=5,
-            image_url=None,
-            send_to_kitchen=True,
-            is_active=True,
-        ),
-        "Caesar Salad": Product(
-            category_id=categories["Starters"].id,
-            name="Caesar Salad",
-            description="Crisp lettuce, croutons, and creamy dressing.",
-            base_price=Decimal("210.00"),
-            unit="bowl",
-            tax_rate=5,
-            image_url=None,
-            send_to_kitchen=True,
-            is_active=True,
-        ),
-        "Veg Burger": Product(
-            category_id=categories["Mains"].id,
-            name="Veg Burger",
-            description="Loaded burger with fries on the side.",
-            base_price=Decimal("280.00"),
-            unit="plate",
-            tax_rate=5,
-            image_url=None,
-            send_to_kitchen=True,
-            is_active=True,
-        ),
-        "Tandoori Platter": Product(
-            category_id=categories["Mains"].id,
-            name="Tandoori Platter",
-            description="A mixed tandoori platter for sharing.",
-            base_price=Decimal("560.00"),
-            unit="platter",
-            tax_rate=5,
-            image_url=None,
-            send_to_kitchen=True,
-            is_active=True,
-        ),
-        "Masala Chai": Product(
-            category_id=categories["Beverages"].id,
-            name="Masala Chai",
-            description="Hot spiced tea.",
-            base_price=Decimal("90.00"),
-            unit="cup",
-            tax_rate=5,
-            image_url=None,
-            send_to_kitchen=False,
-            is_active=True,
-        ),
-        "Fresh Lime Soda": Product(
-            category_id=categories["Beverages"].id,
-            name="Fresh Lime Soda",
-            description="Sweet and salted soda with lime.",
-            base_price=Decimal("120.00"),
-            unit="glass",
-            tax_rate=5,
-            image_url=None,
-            send_to_kitchen=False,
-            is_active=True,
-        ),
-        "Cheesecake": Product(
-            category_id=categories["Desserts"].id,
-            name="Cheesecake",
-            description="New York style cheesecake slice.",
-            base_price=Decimal("240.00"),
-            unit="slice",
-            tax_rate=5,
-            image_url=None,
-            send_to_kitchen=True,
-            is_active=True,
-        ),
-    }
-    db.add_all(products.values())
-    db.flush()
-
-    products["Farmhouse Pizza"].variants_rel = [
-        ProductVariant(
-            name="Size",
-            values=[
-                ProductVariantValue(label="Regular", extra_price=Decimal("0.00")),
-                ProductVariantValue(label="Large", extra_price=Decimal("140.00")),
-            ],
-        )
-    ]
-    products["Cold Coffee"].variants_rel = [
-        ProductVariant(
-            name="Add-on",
-            values=[
-                ProductVariantValue(label="Vanilla", extra_price=Decimal("20.00")),
-                ProductVariantValue(label="Hazelnut", extra_price=Decimal("25.00")),
-            ],
-        )
-    ]
-    products["Veg Burger"].variants_rel = [
-        ProductVariant(
-            name="Add-on",
-            values=[
-                ProductVariantValue(label="Extra Cheese", extra_price=Decimal("30.00")),
-                ProductVariantValue(label="Double Patty", extra_price=Decimal("70.00")),
-            ],
-        )
-    ]
-
     payment_methods = [
         PaymentMethod(name="Cash", type="cash", enabled=True, config_json={}, is_active=True),
         PaymentMethod(name="Card", type="card", enabled=True, config_json={}, is_active=True),
@@ -316,109 +72,174 @@ def seed_database(db: Session) -> None:
     db.add_all(payment_methods)
     db.flush()
 
-    floors = [
-        Floor(branch_id=branches[0].id, name="Ground Floor", is_active=True),
-        Floor(branch_id=branches[0].id, name="Rooftop", is_active=True),
-        Floor(branch_id=branches[1].id, name="Main Dining", is_active=True),
-        Floor(branch_id=branches[1].id, name="Family Section", is_active=True),
-        Floor(branch_id=branches[2].id, name="Express Hall", is_active=True),
-        Floor(branch_id=branches[2].id, name="Lounge", is_active=True),
-    ]
-    db.add_all(floors)
+    products: dict[str, Product] = {}
+
+    products["main_paneer_tikka"] = _create_product(
+        db, branch_id=branches["main"].id, category_id=categories["Starters"].id,
+        name="Paneer Tikka", description="Smoky paneer cubes with mint chutney.", price="260.00", unit="plate", tax_rate=5
+    )
+    products["main_farmhouse_pizza"] = _create_product(
+        db, branch_id=branches["main"].id, category_id=categories["Mains"].id,
+        name="Farmhouse Pizza", description="Loaded veg pizza with mozzarella and herbs.", price="420.00", unit="pizza", tax_rate=5,
+        variants=[("Size", [("Regular", "0.00"), ("Large", "140.00")])]
+    )
+    products["main_masala_lemonade"] = _create_product(
+        db, branch_id=branches["main"].id, category_id=categories["Beverages"].id,
+        name="Masala Lemonade", description="Fresh lemonade with house masala.", price="110.00", unit="glass", tax_rate=5, send_to_kitchen=False
+    )
+    products["main_cold_coffee"] = _create_product(
+        db, branch_id=branches["main"].id, category_id=categories["Beverages"].id,
+        name="Cold Coffee", description="Chilled coffee with whipped cream.", price="150.00", unit="glass", tax_rate=5, send_to_kitchen=False,
+        variants=[("Add-on", [("Vanilla", "20.00"), ("Hazelnut", "25.00")])]
+    )
+    products["main_brownie"] = _create_product(
+        db, branch_id=branches["main"].id, category_id=categories["Desserts"].id,
+        name="Brownie Sundae", description="Warm brownie served with vanilla ice cream.", price="220.00", unit="serve", tax_rate=5
+    )
+    products["main_caesar_salad"] = _create_product(
+        db, branch_id=branches["main"].id, category_id=categories["Starters"].id,
+        name="Caesar Salad", description="Crisp lettuce, croutons, and creamy dressing.", price="210.00", unit="bowl", tax_rate=5
+    )
+    products["main_hara_bhara"] = _create_product(
+        db, branch_id=branches["main"].id, category_id=categories["Starters"].id,
+        name="Hara Bhara Kebab", description="Spinach and pea kebabs with herb dip.", price="230.00", unit="plate", tax_rate=5
+    )
+    products["main_pesto_pasta"] = _create_product(
+        db, branch_id=branches["main"].id, category_id=categories["Mains"].id,
+        name="Pesto Pasta", description="Basil pesto pasta with parmesan flakes.", price="360.00", unit="bowl", tax_rate=5
+    )
+    products["main_sizzler"] = _create_product(
+        db, branch_id=branches["main"].id, category_id=categories["Mains"].id,
+        name="Veg Sizzler", description="Hot iron platter with veggies and rice.", price="490.00", unit="plate", tax_rate=5
+    )
+    products["main_tiramisu"] = _create_product(
+        db, branch_id=branches["main"].id, category_id=categories["Desserts"].id,
+        name="Tiramisu Jar", description="Coffee layered mascarpone dessert jar.", price="260.00", unit="jar", tax_rate=5
+    )
+
+    products["downtown_bruschetta"] = _create_product(
+        db, branch_id=branches["downtown"].id, category_id=categories["Starters"].id,
+        name="Bruschetta", description="Toasted artisan bread with tomato basil topping.", price="180.00", unit="plate", tax_rate=5
+    )
+    products["downtown_penne"] = _create_product(
+        db, branch_id=branches["downtown"].id, category_id=categories["Mains"].id,
+        name="Penne Alfredo", description="Creamy white sauce pasta with parmesan.", price="340.00", unit="bowl", tax_rate=5
+    )
+    products["downtown_tandoori"] = _create_product(
+        db, branch_id=branches["downtown"].id, category_id=categories["Mains"].id,
+        name="Tandoori Platter", description="Mixed tandoori platter for sharing.", price="560.00", unit="platter", tax_rate=5
+    )
+    products["downtown_fresh_lime"] = _create_product(
+        db, branch_id=branches["downtown"].id, category_id=categories["Beverages"].id,
+        name="Fresh Lime Soda", description="Sweet and salted soda with lime.", price="120.00", unit="glass", tax_rate=5, send_to_kitchen=False
+    )
+    products["downtown_cheesecake"] = _create_product(
+        db, branch_id=branches["downtown"].id, category_id=categories["Desserts"].id,
+        name="Cheesecake", description="New York style cheesecake slice.", price="240.00", unit="slice", tax_rate=5
+    )
+    products["downtown_stuffed_mushroom"] = _create_product(
+        db, branch_id=branches["downtown"].id, category_id=categories["Starters"].id,
+        name="Stuffed Mushroom", description="Cheese stuffed mushrooms baked golden.", price="250.00", unit="plate", tax_rate=5
+    )
+    products["downtown_lasagna"] = _create_product(
+        db, branch_id=branches["downtown"].id, category_id=categories["Mains"].id,
+        name="Veg Lasagna", description="Layered baked lasagna with rich tomato sauce.", price="410.00", unit="portion", tax_rate=5
+    )
+    products["downtown_mojito"] = _create_product(
+        db, branch_id=branches["downtown"].id, category_id=categories["Beverages"].id,
+        name="Virgin Mojito", description="Mint and lime cooler.", price="160.00", unit="glass", tax_rate=5, send_to_kitchen=False
+    )
+
+    products["airport_veg_burger"] = _create_product(
+        db, branch_id=branches["airport"].id, category_id=categories["Mains"].id,
+        name="Veg Burger", description="Loaded burger with fries on the side.", price="280.00", unit="plate", tax_rate=5,
+        variants=[("Add-on", [("Extra Cheese", "30.00"), ("Double Patty", "70.00")])]
+    )
+    products["airport_masala_chai"] = _create_product(
+        db, branch_id=branches["airport"].id, category_id=categories["Beverages"].id,
+        name="Masala Chai", description="Hot spiced tea.", price="90.00", unit="cup", tax_rate=5, send_to_kitchen=False
+    )
+    products["airport_wrap"] = _create_product(
+        db, branch_id=branches["airport"].id, category_id=categories["Mains"].id,
+        name="Airport Veg Wrap", description="Quick grilled wrap for travelers.", price="230.00", unit="piece", tax_rate=5
+    )
+    products["airport_hash_brown"] = _create_product(
+        db, branch_id=branches["airport"].id, category_id=categories["Starters"].id,
+        name="Hash Brown Basket", description="Crispy potato bites for grab-and-go orders.", price="170.00", unit="basket", tax_rate=5
+    )
+    products["airport_espresso"] = _create_product(
+        db, branch_id=branches["airport"].id, category_id=categories["Beverages"].id,
+        name="Double Espresso", description="Strong quick coffee shot.", price="130.00", unit="cup", tax_rate=5, send_to_kitchen=False
+    )
+    products["airport_muffin"] = _create_product(
+        db, branch_id=branches["airport"].id, category_id=categories["Desserts"].id,
+        name="Blueberry Muffin", description="Fresh baked blueberry muffin.", price="145.00", unit="piece", tax_rate=5
+    )
     db.flush()
 
-    tables = [
-        RestaurantTable(branch_id=branches[0].id, floor_id=floors[0].id, table_number="T1", seats=2, active=True),
-        RestaurantTable(branch_id=branches[0].id, floor_id=floors[0].id, table_number="T2", seats=4, active=True),
-        RestaurantTable(branch_id=branches[0].id, floor_id=floors[1].id, table_number="R1", seats=4, active=True),
-        RestaurantTable(branch_id=branches[1].id, floor_id=floors[2].id, table_number="D1", seats=2, active=True),
-        RestaurantTable(branch_id=branches[1].id, floor_id=floors[2].id, table_number="D2", seats=6, active=True),
-        RestaurantTable(branch_id=branches[1].id, floor_id=floors[3].id, table_number="F1", seats=4, active=True),
-        RestaurantTable(branch_id=branches[1].id, floor_id=floors[3].id, table_number="F2", seats=8, active=True),
-        RestaurantTable(branch_id=branches[2].id, floor_id=floors[4].id, table_number="E1", seats=2, active=True),
-        RestaurantTable(branch_id=branches[2].id, floor_id=floors[4].id, table_number="E2", seats=2, active=True),
-        RestaurantTable(branch_id=branches[2].id, floor_id=floors[5].id, table_number="L1", seats=6, active=True),
-    ]
-    db.add_all(tables)
+    floors = {
+        "main_ground": Floor(branch_id=branches["main"].id, name="Ground Floor", is_active=True),
+        "main_rooftop": Floor(branch_id=branches["main"].id, name="Rooftop", is_active=True),
+        "main_lounge": Floor(branch_id=branches["main"].id, name="Private Lounge", is_active=True),
+        "main_garden": Floor(branch_id=branches["main"].id, name="Garden Deck", is_active=True),
+        "downtown_main": Floor(branch_id=branches["downtown"].id, name="Main Dining", is_active=True),
+        "downtown_family": Floor(branch_id=branches["downtown"].id, name="Family Section", is_active=True),
+        "downtown_upper": Floor(branch_id=branches["downtown"].id, name="Upper Loft", is_active=True),
+        "airport_express": Floor(branch_id=branches["airport"].id, name="Express Hall", is_active=True),
+        "airport_waiting": Floor(branch_id=branches["airport"].id, name="Waiting Lounge", is_active=True),
+    }
+    db.add_all(floors.values())
     db.flush()
 
-    terminals = [
-        POSTerminal(branch_id=branches[0].id, name="Main Register", location="Ground Floor", active=True),
-        POSTerminal(branch_id=branches[0].id, name="Rooftop Register", location="Rooftop", active=True),
-        POSTerminal(branch_id=branches[1].id, name="Downtown Register", location="Front Desk", active=True),
-        POSTerminal(branch_id=branches[1].id, name="Family Register", location="Family Section", active=True),
-        POSTerminal(branch_id=branches[2].id, name="Airport Register", location="Express Hall", active=True),
-    ]
-    db.add_all(terminals)
+    tables = {
+        "main_t1": RestaurantTable(branch_id=branches["main"].id, floor_id=floors["main_ground"].id, table_number="T1", seats=2, active=True),
+        "main_t2": RestaurantTable(branch_id=branches["main"].id, floor_id=floors["main_ground"].id, table_number="T2", seats=4, active=True),
+        "main_t3": RestaurantTable(branch_id=branches["main"].id, floor_id=floors["main_ground"].id, table_number="T3", seats=6, active=True),
+        "main_t4": RestaurantTable(branch_id=branches["main"].id, floor_id=floors["main_ground"].id, table_number="T4", seats=2, active=True),
+        "main_r1": RestaurantTable(branch_id=branches["main"].id, floor_id=floors["main_rooftop"].id, table_number="R1", seats=4, active=True),
+        "main_r2": RestaurantTable(branch_id=branches["main"].id, floor_id=floors["main_rooftop"].id, table_number="R2", seats=6, active=True),
+        "main_l1": RestaurantTable(branch_id=branches["main"].id, floor_id=floors["main_lounge"].id, table_number="L1", seats=8, active=True),
+        "main_g1": RestaurantTable(branch_id=branches["main"].id, floor_id=floors["main_garden"].id, table_number="G1", seats=4, active=True),
+        "downtown_d1": RestaurantTable(branch_id=branches["downtown"].id, floor_id=floors["downtown_main"].id, table_number="D1", seats=2, active=True),
+        "downtown_d2": RestaurantTable(branch_id=branches["downtown"].id, floor_id=floors["downtown_main"].id, table_number="D2", seats=6, active=True),
+        "downtown_d3": RestaurantTable(branch_id=branches["downtown"].id, floor_id=floors["downtown_main"].id, table_number="D3", seats=4, active=True),
+        "downtown_f1": RestaurantTable(branch_id=branches["downtown"].id, floor_id=floors["downtown_family"].id, table_number="F1", seats=4, active=True),
+        "downtown_f2": RestaurantTable(branch_id=branches["downtown"].id, floor_id=floors["downtown_family"].id, table_number="F2", seats=8, active=True),
+        "downtown_u1": RestaurantTable(branch_id=branches["downtown"].id, floor_id=floors["downtown_upper"].id, table_number="U1", seats=4, active=True),
+        "airport_e1": RestaurantTable(branch_id=branches["airport"].id, floor_id=floors["airport_express"].id, table_number="E1", seats=2, active=True),
+        "airport_e2": RestaurantTable(branch_id=branches["airport"].id, floor_id=floors["airport_express"].id, table_number="E2", seats=2, active=True),
+        "airport_e3": RestaurantTable(branch_id=branches["airport"].id, floor_id=floors["airport_express"].id, table_number="E3", seats=2, active=True),
+        "airport_w1": RestaurantTable(branch_id=branches["airport"].id, floor_id=floors["airport_waiting"].id, table_number="W1", seats=4, active=True),
+    }
+    db.add_all(tables.values())
     db.flush()
 
-    sessions = [
-        POSSession(
-            branch_id=branches[0].id,
-            terminal_id=terminals[0].id,
-            responsible_id=main_staff.id,
-            status="open",
-            opening_amount=Decimal("3000.00"),
-            closing_amount=Decimal("0.00"),
-            opened_at=now - timedelta(hours=4),
-        ),
-        POSSession(
-            branch_id=branches[0].id,
-            terminal_id=terminals[1].id,
-            responsible_id=main_staff.id,
-            status="closed",
-            opening_amount=Decimal("2500.00"),
-            closing_amount=Decimal("6150.00"),
-            opened_at=now - timedelta(days=1, hours=6),
-            closed_at=now - timedelta(days=1, hours=1),
-        ),
-        POSSession(
-            branch_id=branches[1].id,
-            terminal_id=terminals[2].id,
-            responsible_id=downtown_staff.id,
-            status="open",
-            opening_amount=Decimal("2200.00"),
-            closing_amount=Decimal("0.00"),
-            opened_at=now - timedelta(hours=3),
-        ),
-        POSSession(
-            branch_id=branches[1].id,
-            terminal_id=terminals[3].id,
-            responsible_id=downtown_staff_two.id,
-            status="closed",
-            opening_amount=Decimal("1800.00"),
-            closing_amount=Decimal("4890.00"),
-            opened_at=now - timedelta(days=2, hours=5),
-            closed_at=now - timedelta(days=2, hours=1),
-        ),
-        POSSession(
-            branch_id=branches[2].id,
-            terminal_id=terminals[4].id,
-            responsible_id=airport_staff.id,
-            status="open",
-            opening_amount=Decimal("3500.00"),
-            closing_amount=Decimal("0.00"),
-            opened_at=now - timedelta(hours=2, minutes=30),
-        ),
-        POSSession(
-            branch_id=branches[0].id,
-            terminal_id=terminals[0].id,
-            responsible_id=main_staff_two.id,
-            status="closed",
-            opening_amount=Decimal("2900.00"),
-            closing_amount=Decimal("7020.00"),
-            opened_at=now - timedelta(days=3, hours=8),
-            closed_at=now - timedelta(days=3, hours=1),
-        ),
-    ]
-    db.add_all(sessions)
+    terminals = {
+        "main_register": POSTerminal(branch_id=branches["main"].id, name="Main Register", location="Ground Floor", active=True),
+        "main_rooftop_register": POSTerminal(branch_id=branches["main"].id, name="Rooftop Register", location="Rooftop", active=True),
+        "downtown_register": POSTerminal(branch_id=branches["downtown"].id, name="Downtown Register", location="Front Desk", active=True),
+        "downtown_upper_register": POSTerminal(branch_id=branches["downtown"].id, name="Upper Loft Register", location="Upper Loft", active=True),
+        "airport_register": POSTerminal(branch_id=branches["airport"].id, name="Airport Register", location="Express Hall", active=True),
+    }
+    db.add_all(terminals.values())
     db.flush()
 
-    order_one = _build_order(
-        branch_id=branches[0].id,
-        session_id=sessions[0].id,
-        table_id=tables[0].id,
-        responsible_id=main_staff.id,
+    sessions = {
+        "main_open": POSSession(branch_id=branches["main"].id, terminal_id=terminals["main_register"].id, responsible_id=staff["main_1"].id, status="open", opening_amount=Decimal("3000.00"), closing_amount=Decimal("0.00"), opened_at=now - timedelta(hours=4)),
+        "main_closed": POSSession(branch_id=branches["main"].id, terminal_id=terminals["main_rooftop_register"].id, responsible_id=staff["main_2"].id, status="closed", opening_amount=Decimal("2500.00"), closing_amount=Decimal("6150.00"), opened_at=now - timedelta(days=1, hours=6), closed_at=now - timedelta(days=1, hours=1)),
+        "downtown_open": POSSession(branch_id=branches["downtown"].id, terminal_id=terminals["downtown_register"].id, responsible_id=staff["downtown_1"].id, status="open", opening_amount=Decimal("2200.00"), closing_amount=Decimal("0.00"), opened_at=now - timedelta(hours=3)),
+        "downtown_closed": POSSession(branch_id=branches["downtown"].id, terminal_id=terminals["downtown_upper_register"].id, responsible_id=staff["downtown_3"].id, status="closed", opening_amount=Decimal("1900.00"), closing_amount=Decimal("5420.00"), opened_at=now - timedelta(days=1, hours=5), closed_at=now - timedelta(days=1, hours=1)),
+        "airport_open": POSSession(branch_id=branches["airport"].id, terminal_id=terminals["airport_register"].id, responsible_id=staff["airport_1"].id, status="open", opening_amount=Decimal("3500.00"), closing_amount=Decimal("0.00"), opened_at=now - timedelta(hours=2, minutes=30)),
+        "airport_closed": POSSession(branch_id=branches["airport"].id, terminal_id=terminals["airport_register"].id, responsible_id=staff["airport_2"].id, status="closed", opening_amount=Decimal("2800.00"), closing_amount=Decimal("4680.00"), opened_at=now - timedelta(days=2, hours=4), closed_at=now - timedelta(days=2, hours=1)),
+    }
+    db.add_all(sessions.values())
+    db.flush()
+
+    order_main_paid = _build_order(
+        branch_id=branches["main"].id,
+        session_id=sessions["main_open"].id,
+        table_id=tables["main_t1"].id,
+        responsible_id=staff["main_1"].id,
         order_number="ORD-MAIN-001",
         order_type="pos",
         status="completed",
@@ -429,104 +250,85 @@ def seed_database(db: Session) -> None:
         closed_at=now - timedelta(hours=2),
         paid_at=now - timedelta(hours=2),
         items=[
-            {
-                "product": products["Paneer Tikka"],
-                "quantity": 1,
-                "variant_label": None,
-            },
-            {
-                "product": products["Farmhouse Pizza"],
-                "quantity": 1,
-                "variant_label": "Large",
-            },
-            {
-                "product": products["Masala Lemonade"],
-                "quantity": 2,
-                "variant_label": None,
-            },
+            {"product": products["main_paneer_tikka"], "quantity": 1},
+            {"product": products["main_farmhouse_pizza"], "quantity": 1, "variant_label": "Large"},
+            {"product": products["main_masala_lemonade"], "quantity": 2},
         ],
     )
-    db.add(order_one)
+    db.add(order_main_paid)
     db.flush()
+    db.add(Payment(order_id=order_main_paid.id, payment_method_id=payment_methods[0].id, amount=order_main_paid.grand_total, payment_status="confirmed", transaction_ref="CASH-DEMO-001", reference="CASH-DEMO-001", paid_at=order_main_paid.paid_at, created_at=order_main_paid.created_at, updated_at=order_main_paid.closed_at or order_main_paid.created_at))
+
     db.add(
-        Payment(
-            order_id=order_one.id,
-            payment_method_id=payment_methods[0].id,
-            amount=order_one.grand_total,
-            payment_status="confirmed",
-            transaction_ref="CASH-DEMO-001",
-            reference="CASH-DEMO-001",
-            paid_at=order_one.paid_at,
-            created_at=order_one.created_at,
-            updated_at=order_one.closed_at or order_one.created_at,
+        _build_order(
+            branch_id=branches["main"].id,
+            session_id=sessions["main_open"].id,
+            table_id=tables["main_t2"].id,
+            responsible_id=staff["main_1"].id,
+            order_number="ORD-MAIN-002",
+            order_type="self",
+            status="sent",
+            kitchen_status="preparing",
+            payment_status="unpaid",
+            notes="Customer self order",
+            created_at=now - timedelta(minutes=40),
+            items=[
+                {"product": products["main_caesar_salad"], "quantity": 1},
+                {"product": products["main_cold_coffee"], "quantity": 2, "variant_label": "Vanilla"},
+                {"product": products["main_brownie"], "quantity": 1},
+            ],
         )
     )
-
-    order_two = _build_order(
-        branch_id=branches[0].id,
-        session_id=sessions[0].id,
-        table_id=tables[1].id,
-        responsible_id=main_staff.id,
-        order_number="ORD-MAIN-002",
-        order_type="self",
-        status="sent",
-        kitchen_status="preparing",
-        payment_status="unpaid",
-        notes="Customer self order",
-        created_at=now - timedelta(minutes=40),
-        items=[
-            {
-                "product": products["Bruschetta"],
-                "quantity": 1,
-                "variant_label": None,
-            },
-            {
-                "product": products["Penne Alfredo"],
-                "quantity": 2,
-                "variant_label": None,
-            },
-            {
-                "product": products["Brownie Sundae"],
-                "quantity": 1,
-                "variant_label": None,
-            },
-        ],
+    db.add(
+        _build_order(
+            branch_id=branches["main"].id,
+            session_id=sessions["main_open"].id,
+            table_id=tables["main_r1"].id,
+            responsible_id=staff["main_2"].id,
+            order_number="ORD-MAIN-003",
+            order_type="pos",
+            status="sent",
+            kitchen_status="to_cook",
+            payment_status="unpaid",
+            notes="Rooftop group order",
+            created_at=now - timedelta(minutes=55),
+            items=[
+                {"product": products["main_pesto_pasta"], "quantity": 2},
+                {"product": products["main_sizzler"], "quantity": 1},
+                {"product": products["main_tiramisu"], "quantity": 2},
+            ],
+        )
     )
-    db.add(order_two)
-
-    order_three = _build_order(
-        branch_id=branches[1].id,
-        session_id=sessions[2].id,
-        table_id=tables[3].id,
-        responsible_id=downtown_staff.id,
-        order_number="ORD-DTWN-001",
+    order_main_paid_two = _build_order(
+        branch_id=branches["main"].id,
+        session_id=sessions["main_closed"].id,
+        table_id=tables["main_g1"].id,
+        responsible_id=staff["main_3"].id,
+        order_number="ORD-MAIN-004",
         order_type="pos",
-        status="sent",
-        kitchen_status="to_cook",
-        payment_status="unpaid",
-        notes="Window table",
-        created_at=now - timedelta(minutes=25),
+        status="completed",
+        kitchen_status="completed",
+        payment_status="paid",
+        notes="Garden evening service",
+        created_at=now - timedelta(days=1, hours=3),
+        closed_at=now - timedelta(days=1, hours=2, minutes=30),
+        paid_at=now - timedelta(days=1, hours=2, minutes=30),
         items=[
-            {
-                "product": products["Farmhouse Pizza"],
-                "quantity": 1,
-                "variant_label": "Regular",
-            },
-            {
-                "product": products["Cold Coffee"],
-                "quantity": 2,
-                "variant_label": "Hazelnut",
-            },
+            {"product": products["main_hara_bhara"], "quantity": 2},
+            {"product": products["main_farmhouse_pizza"], "quantity": 1, "variant_label": "Regular"},
+            {"product": products["main_masala_lemonade"], "quantity": 3},
         ],
     )
-    db.add(order_three)
+    db.add(order_main_paid_two)
+    db.flush()
+    db.add(Payment(order_id=order_main_paid_two.id, payment_method_id=payment_methods[1].id, amount=order_main_paid_two.grand_total, payment_status="confirmed", transaction_ref="CARD-DEMO-002", reference="CARD-DEMO-002", paid_at=order_main_paid_two.paid_at, created_at=order_main_paid_two.created_at, updated_at=order_main_paid_two.closed_at or order_main_paid_two.created_at))
 
-    order_four = _build_order(
-        branch_id=branches[1].id,
-        session_id=sessions[2].id,
-        table_id=tables[4].id,
-        responsible_id=downtown_staff.id,
-        order_number="ORD-DTWN-002",
+    order_downtown_paid = _build_order(
+        branch_id=branches["downtown"].id,
+        session_id=sessions["downtown_open"].id,
+        table_id=tables["downtown_d2"].id,
+        responsible_id=staff["downtown_1"].id,
+        order_number="ORD-DTWN-001",
         order_type="pos",
         status="completed",
         kitchen_status="completed",
@@ -536,106 +338,168 @@ def seed_database(db: Session) -> None:
         closed_at=now - timedelta(hours=1),
         paid_at=now - timedelta(hours=1),
         items=[
-            {"product": products["Tandoori Platter"], "quantity": 1, "variant_label": None},
-            {"product": products["Fresh Lime Soda"], "quantity": 3, "variant_label": None},
-            {"product": products["Cheesecake"], "quantity": 2, "variant_label": None},
+            {"product": products["downtown_tandoori"], "quantity": 1},
+            {"product": products["downtown_fresh_lime"], "quantity": 3},
+            {"product": products["downtown_cheesecake"], "quantity": 2},
         ],
     )
-    db.add(order_four)
+    db.add(order_downtown_paid)
     db.flush()
+    db.add(Payment(order_id=order_downtown_paid.id, payment_method_id=payment_methods[2].id, amount=order_downtown_paid.grand_total, payment_status="confirmed", transaction_ref="UPI-DEMO-004", reference="UPI-DEMO-004", paid_at=order_downtown_paid.paid_at, created_at=order_downtown_paid.created_at, updated_at=order_downtown_paid.closed_at or order_downtown_paid.created_at))
+
     db.add(
-        Payment(
-            order_id=order_four.id,
-            payment_method_id=payment_methods[2].id,
-            amount=order_four.grand_total,
-            payment_status="confirmed",
-            transaction_ref="UPI-DEMO-004",
-            reference="UPI-DEMO-004",
-            paid_at=order_four.paid_at,
-            created_at=order_four.created_at,
-            updated_at=order_four.closed_at or order_four.created_at,
+        _build_order(
+            branch_id=branches["downtown"].id,
+            session_id=sessions["downtown_open"].id,
+            table_id=tables["downtown_d1"].id,
+            responsible_id=staff["downtown_1"].id,
+            order_number="ORD-DTWN-002",
+            order_type="pos",
+            status="sent",
+            kitchen_status="to_cook",
+            payment_status="unpaid",
+            notes="Window table",
+            created_at=now - timedelta(minutes=25),
+            items=[
+                {"product": products["downtown_bruschetta"], "quantity": 1},
+                {"product": products["downtown_penne"], "quantity": 2},
+            ],
         )
     )
-
-    order_five = _build_order(
-        branch_id=branches[2].id,
-        session_id=sessions[4].id,
-        table_id=tables[7].id,
-        responsible_id=airport_staff.id,
-        order_number="ORD-AIR-001",
-        order_type="self",
-        status="sent",
-        kitchen_status="to_cook",
-        payment_status="unpaid",
-        notes="Quick bite before boarding",
-        created_at=now - timedelta(minutes=18),
-        items=[
-            {"product": products["Veg Burger"], "quantity": 2, "variant_label": "Extra Cheese"},
-            {"product": products["Masala Chai"], "quantity": 2, "variant_label": None},
-        ],
+    db.add(
+        _build_order(
+            branch_id=branches["downtown"].id,
+            session_id=sessions["downtown_open"].id,
+            table_id=tables["downtown_f1"].id,
+            responsible_id=staff["downtown_2"].id,
+            order_number="ORD-DTWN-003",
+            order_type="pos",
+            status="sent",
+            kitchen_status="preparing",
+            payment_status="unpaid",
+            notes="Birthday table",
+            created_at=now - timedelta(minutes=38),
+            items=[
+                {"product": products["downtown_stuffed_mushroom"], "quantity": 1},
+                {"product": products["downtown_lasagna"], "quantity": 2},
+                {"product": products["downtown_mojito"], "quantity": 3},
+            ],
+        )
     )
-    db.add(order_five)
-
-    order_six = _build_order(
-        branch_id=branches[0].id,
-        session_id=sessions[0].id,
-        table_id=tables[2].id,
-        responsible_id=main_staff_two.id,
-        order_number="ORD-MAIN-003",
+    order_downtown_paid_two = _build_order(
+        branch_id=branches["downtown"].id,
+        session_id=sessions["downtown_closed"].id,
+        table_id=tables["downtown_u1"].id,
+        responsible_id=staff["downtown_3"].id,
+        order_number="ORD-DTWN-004",
         order_type="pos",
         status="completed",
         kitchen_status="completed",
         payment_status="paid",
-        notes="Rooftop evening order",
-        created_at=now - timedelta(hours=3, minutes=10),
-        closed_at=now - timedelta(hours=2, minutes=40),
-        paid_at=now - timedelta(hours=2, minutes=40),
+        notes="Late dinner loft seating",
+        created_at=now - timedelta(days=1, hours=2, minutes=20),
+        closed_at=now - timedelta(days=1, hours=1, minutes=50),
+        paid_at=now - timedelta(days=1, hours=1, minutes=50),
         items=[
-            {"product": products["Caesar Salad"], "quantity": 1, "variant_label": None},
-            {"product": products["Cold Coffee"], "quantity": 2, "variant_label": "Vanilla"},
-            {"product": products["Brownie Sundae"], "quantity": 1, "variant_label": None},
+            {"product": products["downtown_bruschetta"], "quantity": 2},
+            {"product": products["downtown_tandoori"], "quantity": 1},
+            {"product": products["downtown_cheesecake"], "quantity": 1},
         ],
     )
-    db.add(order_six)
+    db.add(order_downtown_paid_two)
     db.flush()
+    db.add(Payment(order_id=order_downtown_paid_two.id, payment_method_id=payment_methods[0].id, amount=order_downtown_paid_two.grand_total, payment_status="confirmed", transaction_ref="CASH-DEMO-005", reference="CASH-DEMO-005", paid_at=order_downtown_paid_two.paid_at, created_at=order_downtown_paid_two.created_at, updated_at=order_downtown_paid_two.closed_at or order_downtown_paid_two.created_at))
+
     db.add(
-        Payment(
-            order_id=order_six.id,
-            payment_method_id=payment_methods[1].id,
-            amount=order_six.grand_total,
-            payment_status="confirmed",
-            transaction_ref="CARD-DEMO-006",
-            reference="CARD-DEMO-006",
-            paid_at=order_six.paid_at,
-            created_at=order_six.created_at,
-            updated_at=order_six.closed_at or order_six.created_at,
+        _build_order(
+            branch_id=branches["airport"].id,
+            session_id=sessions["airport_open"].id,
+            table_id=tables["airport_e1"].id,
+            responsible_id=staff["airport_1"].id,
+            order_number="ORD-AIR-001",
+            order_type="self",
+            status="sent",
+            kitchen_status="to_cook",
+            payment_status="unpaid",
+            notes="Quick bite before boarding",
+            created_at=now - timedelta(minutes=18),
+            items=[
+                {"product": products["airport_veg_burger"], "quantity": 2, "variant_label": "Extra Cheese"},
+                {"product": products["airport_masala_chai"], "quantity": 2},
+            ],
         )
     )
+
+    db.add(
+        _build_order(
+            branch_id=branches["airport"].id,
+            session_id=sessions["airport_open"].id,
+            table_id=tables["airport_e2"].id,
+            responsible_id=staff["airport_1"].id,
+            order_number="ORD-AIR-002",
+            order_type="pos",
+            status="sent",
+            kitchen_status="preparing",
+            payment_status="unpaid",
+            notes="Gate-side takeaway",
+            created_at=now - timedelta(minutes=12),
+            items=[
+                {"product": products["airport_wrap"], "quantity": 1},
+                {"product": products["airport_masala_chai"], "quantity": 1},
+            ],
+        )
+    )
+    db.add(
+        _build_order(
+            branch_id=branches["airport"].id,
+            session_id=sessions["airport_open"].id,
+            table_id=tables["airport_w1"].id,
+            responsible_id=staff["airport_2"].id,
+            order_number="ORD-AIR-003",
+            order_type="pos",
+            status="sent",
+            kitchen_status="to_cook",
+            payment_status="unpaid",
+            notes="Waiting lounge family",
+            created_at=now - timedelta(minutes=30),
+            items=[
+                {"product": products["airport_hash_brown"], "quantity": 2},
+                {"product": products["airport_wrap"], "quantity": 2},
+                {"product": products["airport_espresso"], "quantity": 2},
+            ],
+        )
+    )
+    order_airport_paid = _build_order(
+        branch_id=branches["airport"].id,
+        session_id=sessions["airport_closed"].id,
+        table_id=tables["airport_e3"].id,
+        responsible_id=staff["airport_2"].id,
+        order_number="ORD-AIR-004",
+        order_type="pos",
+        status="completed",
+        kitchen_status="completed",
+        payment_status="paid",
+        notes="Morning traveler rush",
+        created_at=now - timedelta(days=2, hours=2),
+        closed_at=now - timedelta(days=2, hours=1, minutes=35),
+        paid_at=now - timedelta(days=2, hours=1, minutes=35),
+        items=[
+            {"product": products["airport_hash_brown"], "quantity": 1},
+            {"product": products["airport_muffin"], "quantity": 2},
+            {"product": products["airport_espresso"], "quantity": 2},
+        ],
+    )
+    db.add(order_airport_paid)
+    db.flush()
+    db.add(Payment(order_id=order_airport_paid.id, payment_method_id=payment_methods[2].id, amount=order_airport_paid.grand_total, payment_status="confirmed", transaction_ref="UPI-DEMO-006", reference="UPI-DEMO-006", paid_at=order_airport_paid.paid_at, created_at=order_airport_paid.created_at, updated_at=order_airport_paid.closed_at or order_airport_paid.created_at))
 
     db.flush()
 
     db.add_all(
         [
-            SelfOrderToken(
-                branch_id=branches[0].id,
-                token=token_hex(6),
-                table_id=tables[1].id,
-                session_id=sessions[0].id,
-                active=True,
-                expires_at=now + timedelta(hours=6),
-                created_at=now - timedelta(hours=1),
-                updated_at=now - timedelta(hours=1),
-            ),
-            SelfOrderToken(
-                branch_id=branches[2].id,
-                token=token_hex(6),
-                table_id=tables[7].id,
-                session_id=sessions[4].id,
-                active=True,
-                expires_at=now + timedelta(hours=8),
-                created_at=now - timedelta(minutes=45),
-                updated_at=now - timedelta(minutes=45),
-            ),
+            SelfOrderToken(branch_id=branches["main"].id, token=token_hex(6), table_id=tables["main_t2"].id, session_id=sessions["main_open"].id, active=True, expires_at=now + timedelta(hours=6), created_at=now - timedelta(hours=1), updated_at=now - timedelta(hours=1)),
+            SelfOrderToken(branch_id=branches["downtown"].id, token=token_hex(6), table_id=tables["downtown_f2"].id, session_id=sessions["downtown_open"].id, active=True, expires_at=now + timedelta(hours=7), created_at=now - timedelta(hours=2), updated_at=now - timedelta(hours=2)),
+            SelfOrderToken(branch_id=branches["airport"].id, token=token_hex(6), table_id=tables["airport_e1"].id, session_id=sessions["airport_open"].id, active=True, expires_at=now + timedelta(hours=8), created_at=now - timedelta(minutes=45), updated_at=now - timedelta(minutes=45)),
         ]
     )
 
@@ -675,6 +539,68 @@ def _get_or_create_user(
     )
     db.add(user)
     return user
+
+
+def _get_or_create_branch(
+    db: Session,
+    *,
+    name: str,
+    code: str,
+    address: str,
+    phone: str,
+) -> Branch:
+    branch = db.query(Branch).filter((Branch.name == name) | (Branch.code == code)).first()
+    if branch:
+        branch.name = name
+        branch.code = code
+        branch.address = address
+        branch.phone = phone
+        branch.is_active = True
+        return branch
+
+    branch = Branch(name=name, code=code, address=address, phone=phone, is_active=True)
+    db.add(branch)
+    db.flush()
+    return branch
+
+
+def _create_product(
+    db: Session,
+    *,
+    branch_id: int,
+    category_id: int,
+    name: str,
+    description: str,
+    price: str,
+    unit: str,
+    tax_rate: float,
+    send_to_kitchen: bool = True,
+    variants: list[tuple[str, list[tuple[str, str]]]] | None = None,
+) -> Product:
+    product = Product(
+        branch_id=branch_id,
+        category_id=category_id,
+        name=name,
+        description=description,
+        base_price=Decimal(price),
+        unit=unit,
+        tax_rate=tax_rate,
+        image_url=None,
+        send_to_kitchen=send_to_kitchen,
+        is_active=True,
+    )
+    for variant_name, values in variants or []:
+        product.variants_rel.append(
+            ProductVariant(
+                name=variant_name,
+                values=[
+                    ProductVariantValue(label=label, extra_price=Decimal(extra_price))
+                    for label, extra_price in values
+                ],
+            )
+        )
+    db.add(product)
+    return product
 
 
 def _build_order(
