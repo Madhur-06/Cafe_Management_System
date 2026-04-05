@@ -79,7 +79,7 @@ export function renderPaymentScreen(container, orderId) {
         }
 
         <button class="btn btn-ghost" id="back-to-order-btn" style="margin-top:var(--space-lg)">
-          Back to Order
+          Back to Floor View
         </button>
       </div>
     `;
@@ -161,26 +161,11 @@ export function renderPaymentScreen(container, orderId) {
           <p>Thank you for your order</p>
           <div class="payment-success-amount">Amount Paid ${currency}${Number(order.total).toFixed(2)}</div>
           <div style="display:flex;gap:var(--space-md);justify-content:center;flex-wrap:wrap">
-            <button class="btn btn-ghost" id="email-receipt-btn">Email Receipt</button>
-            <button class="btn btn-secondary" id="clear-table-btn">Clear Table</button>
             <button class="btn btn-primary" id="new-order-btn">Floor View</button>
           </div>
         </div>
       </div>
     `;
-
-    document.getElementById("email-receipt-btn")?.addEventListener("click", () => {
-      showToast("Receipt sent! (demo)", "success");
-    });
-
-    document.getElementById("clear-table-btn")?.addEventListener("click", () => {
-      if (order.tableId) {
-        store.update("tables", order.tableId, { status: "available" });
-      }
-      store.remove("currentOrder");
-      showToast("Table cleared and reset to available!", "success");
-      router.navigate("#/pos/floor");
-    });
 
     document.getElementById("new-order-btn")?.addEventListener("click", () => {
       store.remove("currentOrder");
