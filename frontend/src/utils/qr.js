@@ -34,7 +34,9 @@ export async function generateUPIQR(
 
 export async function generateTokenQR(canvasElement, tokenData) {
   const tokenValue =
-    typeof tokenData === "string" ? tokenData : JSON.stringify(tokenData);
+    typeof tokenData === "string"
+      ? tokenData
+      : tokenData?.url || tokenData?.token || JSON.stringify(tokenData);
   await drawQRCode(canvasElement, tokenValue, 200);
   return tokenValue;
 }

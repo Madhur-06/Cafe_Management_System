@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     secret_key: str = "change-me"
     access_token_expire_minutes: int = 720
     cors_origins: str = "http://localhost:5173"
+    bootstrap_admin_name: str = "System Admin"
+    bootstrap_admin_username: str = "admin"
+    bootstrap_admin_email: str = "admin@poscafe.local"
+    bootstrap_admin_password: str = "admin123"
 
 
 settings = Settings()

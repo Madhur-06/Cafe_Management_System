@@ -34,7 +34,7 @@ Manual setup is still available if you prefer:
 3. Install backend dependencies:
    `python -m pip install -r backend/requirements.txt`
 4. Install frontend dependencies:
-   `cmd /c npm install --prefix frontend`
+   `cmd /c npm install --prefix`
 5. Install root Prisma dependencies:
    `npm install`
 6. Run Prisma:

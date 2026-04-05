@@ -797,16 +797,20 @@ class Store {
     return this._api(`/self-order/tokens?table_id=${tableId}&session_id=${sessionId}`, { method: "POST" });
   }
 
+  async fetchSelfOrderToken(token) {
+    if (!token) throw new Error("Token is required");
+    return this._api(`/self-order/tokens/${encodeURIComponent(token)}`, {}, false);
+  }
+
   async submitSelfOrder(token, items) {
-    const products = this.get("products", []);
     return this._api("/self-order", {
       method: "POST",
       body: JSON.stringify({
         token,
-        items: items.map((item) => {
-          const product = products.find((entry) => String(entry.id) === String(item.productId));
-          return { product_id: product?.id || item.productId, quantity: item.qty };
-        }),
+        items: items.map((item) => ({
+          product_id: item.productId,
+          quantity: item.qty,
+        })),
       }),
     }, false);
   }

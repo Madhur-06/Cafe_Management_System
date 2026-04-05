@@ -36,6 +36,9 @@ router.on('/backend/pos-settings', () => {
 router.on('/backend/self-order', () => {
   import('./pages/backend.js').then(m => m.renderBackend('self-order'));
 });
+router.on('/self-order/:token', (params) => {
+  import('./pages/self-order-public.js').then(m => m.renderSelfOrderPublic(params.token));
+});
 router.on('/backend/reports', () => {
   import('./pages/backend.js').then(m => m.renderBackend('reports'));
 });
@@ -75,7 +78,7 @@ router.on('/customer', () => {
 
 // ---- Route Guard ---- //
 router.beforeEach = (path) => {
-  const publicRoutes = ['/login', '/customer'];
+  const publicRoutes = ['/login', '/customer', '/self-order/'];
   const isPublic = publicRoutes.some(r => path.startsWith(r));
   const user = store.getCurrentUser();
 

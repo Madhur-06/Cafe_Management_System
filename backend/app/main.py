@@ -131,6 +131,57 @@ def ensure_usernames(db: Session) -> None:
     db.commit()
 
 
+def ensure_admin_user(db: Session) -> None:
+    admin_username = normalize_username(settings.bootstrap_admin_username)
+    admin_email = settings.bootstrap_admin_email.strip().lower()
+    admin_name = settings.bootstrap_admin_name.strip() or "System Admin"
+    admin_password = settings.bootstrap_admin_password
+
+    if not admin_username:
+        admin_username = "admin"
+    if not admin_email:
+        admin_email = "admin@poscafe.local"
+    if not admin_password:
+        admin_password = "admin123"
+
+    existing_admin = (
+        db.query(User)
+        .filter((User.role == "admin") | (User.username == admin_username) | (User.email == admin_email))
+        .order_by(User.id)
+        .first()
+    )
+
+    if existing_admin:
+        changed = False
+        if existing_admin.role != "admin":
+            existing_admin.role = "admin"
+            changed = True
+        if not existing_admin.is_active:
+            existing_admin.is_active = True
+            changed = True
+        if not existing_admin.username:
+            existing_admin.username = admin_username
+            changed = True
+        if not existing_admin.email:
+            existing_admin.email = admin_email
+            changed = True
+        if changed:
+            db.commit()
+        return
+
+    admin_user = User(
+        branch_id=None,
+        name=admin_name,
+        username=admin_username,
+        email=admin_email,
+        password_hash=hash_password(admin_password),
+        role="admin",
+        is_active=True,
+    )
+    db.add(admin_user)
+    db.commit()
+
+
 def ensure_branches(db: Session) -> None:
     db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS branch_id INTEGER REFERENCES branches(id)"))
     db.execute(text("ALTER TABLE floors ADD COLUMN IF NOT EXISTS branch_id INTEGER REFERENCES branches(id)"))
@@ -457,6 +508,7 @@ def startup() -> None:
     with Session(bind=engine) as db:
         ensure_branches(db)
         ensure_usernames(db)
+        ensure_admin_user(db)
 
 
 @app.get("/health")
@@ -1181,6 +1233,15 @@ def create_self_order_token(table_id: int, session_id: int, current_user: User =
         raise HTTPException(status_code=404, detail="Table not found")
     if table.branch_id != session.branch_id:
         raise HTTPException(status_code=400, detail="Table does not belong to the session branch")
+    (
+        db.query(SelfOrderToken)
+        .filter(
+            SelfOrderToken.table_id == table_id,
+            SelfOrderToken.session_id == session_id,
+            SelfOrderToken.active.is_(True),
+        )
+        .update({"active": False}, synchronize_session=False)
+    )
     token = SelfOrderToken(
         branch_id=session.branch_id,
         token=token_hex(6),
@@ -1209,6 +1270,9 @@ def get_self_order_token(token: str, db: Session = Depends(get_db)) -> dict:
     )
     if not self_token:
         raise HTTPException(status_code=404, detail="Token not found")
+    session = db.get(POSSession, self_token.session_id)
+    if not session or session.status != "open":
+        raise HTTPException(status_code=400, detail="This self-order token is no longer active")
     table = db.get(RestaurantTable, self_token.table_id)
     products = (
         db.query(Product)
@@ -1240,6 +1304,9 @@ def submit_self_order(payload: SelfOrderInput, db: Session = Depends(get_db)) ->
     )
     if not self_token:
         raise HTTPException(status_code=404, detail="Token not found")
+    session = db.get(POSSession, self_token.session_id)
+    if not session or session.status != "open":
+        raise HTTPException(status_code=400, detail="This self-order token is no longer active")
     order_payload = OrderCreateInput(
         session_id=self_token.session_id,
         table_id=self_token.table_id,
