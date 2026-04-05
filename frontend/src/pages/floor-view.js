@@ -22,7 +22,7 @@ export function renderFloorView(container) {
       <div class="floor-view">
         <div class="floor-view-tabs">
           ${floors.map(f => `
-            <div class="floor-tab ${f.id === activeFloorId ? 'active' : ''}" data-floor="${f.id}">${f.name}</div>
+            <div class="floor-tab ${String(f.id) === String(activeFloorId) ? 'active' : ''}" data-floor="${f.id}">${f.name}</div>
           `).join('')}
         </div>
 

@@ -13,9 +13,9 @@ export function renderFloors(container) {
   function render() {
     const floors = store.getAll('floors');
     const tables = store.getAll('tables');
-    const activeFloor = floors.find(f => f.id === activeFloorId) || floors[0];
+    const activeFloor = floors.find(f => String(f.id) === String(activeFloorId)) || floors[0];
     if (activeFloor) activeFloorId = activeFloor.id;
-    const floorTables = tables.filter(t => t.floorId === activeFloorId);
+    const floorTables = tables.filter(t => String(t.floorId) === String(activeFloorId));
 
     container.innerHTML = `
       <div class="backend-header">
@@ -34,7 +34,7 @@ export function renderFloors(container) {
       ` : `
         <div class="floor-tabs">
           ${floors.map(f => `
-            <div class="floor-tab ${f.id === activeFloorId ? 'active' : ''}" data-floor="${f.id}">
+            <div class="floor-tab ${String(f.id) === String(activeFloorId) ? 'active' : ''}" data-floor="${f.id}">
               ${f.name}
               <button class="delete-floor-btn" data-floor-id="${f.id}" style="margin-left:8px;background:none;border:none;cursor:pointer;color:inherit;opacity:0.5;font-size:0.75rem" title="Delete Floor">${icon('trash', '', 'Delete Floor')}</button>
             </div>
@@ -69,7 +69,7 @@ export function renderFloors(container) {
     // Floor tab switch
     container.querySelectorAll('.floor-tab').forEach(tab => {
       tab.addEventListener('click', (e) => {
-        if (e.target.classList.contains('delete-floor-btn')) return;
+        if (e.target.closest('.delete-floor-btn')) return;
         activeFloorId = tab.dataset.floor;
         render();
       });
