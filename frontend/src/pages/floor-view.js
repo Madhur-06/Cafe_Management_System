@@ -1,9 +1,10 @@
 /* ==========================================================================
-   Floor View — Table selection for POS
+   Floor View - Table selection for POS
    ========================================================================== */
 
 import store from '../store.js';
 import router from '../router.js';
+import { icon } from '../utils/icons.js';
 
 export function renderFloorView(container) {
   const floors = store.getAll('floors');
@@ -27,7 +28,7 @@ export function renderFloorView(container) {
 
         ${floorTables.length === 0 ? `
           <div class="empty-state">
-            <div class="empty-state-icon">🪑</div>
+            <div class="empty-state-icon">${icon('table', '', 'No active tables')}</div>
             <div class="empty-state-text">No active tables on this floor</div>
           </div>
         ` : `
@@ -36,9 +37,9 @@ export function renderFloorView(container) {
               const isOccupied = occupiedTableIds.has(t.id);
               const status = isOccupied ? 'occupied' : 'available';
               return `
-                <div class="table-floor-card ${status} animate-fadeInUp" data-table="${t.id}" title="Table ${t.number} — ${t.seats} seats — ${status}">
+                <div class="table-floor-card ${status} animate-fadeInUp" data-table="${t.id}" title="Table ${t.number} - ${t.seats} seats - ${status}">
                   <div class="table-floor-status">
-                    ${status === 'occupied' ? '🟠' : '🟢'}
+                    ${status === 'occupied' ? icon('clock', '', 'In use') : icon('circleCheck', '', 'Open')}
                   </div>
                   <div class="table-floor-number">${t.number}</div>
                   <div class="table-floor-seats">${t.seats} seats</div>

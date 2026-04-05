@@ -233,6 +233,32 @@ button {
   box-shadow: var(--shadow-md);
 }
 
+/* ---- Icon System ---- */
+.ui-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ui-icon svg {
+  width: 100%;
+  height: 100%;
+}
+.ui-icon-lg {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+.ui-icon-xl {
+  width: 2rem;
+  height: 2rem;
+}
+.ui-icon-2xl {
+  width: 2.6rem;
+  height: 2.6rem;
+}
+
 /* ---- Buttons ---- */
 .btn {
   display: inline-flex;
@@ -315,6 +341,10 @@ button {
   align-items: center;
   gap: 5px;
   user-select: none;
+}
+.theme-toggle-btn .ui-icon {
+  width: 1rem;
+  height: 1rem;
 }
 .theme-toggle-btn:hover {
   background: var(--color-primary-glow);
@@ -512,6 +542,10 @@ select option { background: var(--color-surface); color: var(--color-text); }
   min-width: 280px;
   box-shadow: var(--shadow-lg);
 }
+.toast-icon-wrap .ui-icon {
+  width: 1rem;
+  height: 1rem;
+}
 .toast-success { background: var(--color-secondary-dark); color: #fff; }
 .toast-error { background: var(--color-danger); color: #fff; }
 .toast-info { background: var(--color-info); color: #fff; }
@@ -562,7 +596,10 @@ select option { background: var(--color-surface); color: var(--color-text); }
   cursor: pointer;
   color: var(--color-text-muted);
   transition: all var(--transition-fast);
-  font-size: 1.2rem;
+}
+.modal-close .ui-icon {
+  width: 1rem;
+  height: 1rem;
 }
 .modal-close:hover {
   background: var(--color-surface-hover);
@@ -586,7 +623,11 @@ select option { background: var(--color-surface); color: var(--color-text); }
   text-align: center;
 }
 .empty-state-icon {
-  font-size: 3rem;
+  width: 3rem;
+  height: 3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: var(--space-md);
   opacity: 0.5;
 }
@@ -611,10 +652,16 @@ select option { background: var(--color-surface); color: var(--color-text); }
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 1rem;
   color: var(--color-text-muted);
-  padding: 4px;
+  padding: 4px 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   user-select: none;
+}
+.toggle-pw-btn .ui-icon {
+  width: 0.95rem;
+  height: 0.95rem;
 }
 .toggle-pw-btn:hover { color: var(--color-text); }
 

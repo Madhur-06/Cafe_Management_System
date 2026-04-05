@@ -26,7 +26,14 @@
   align-items: center;
   gap: var(--space-sm);
 }
-.kitchen-topbar-icon { font-size: 1.4rem; }
+.kitchen-topbar-icon {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary-light);
+}
 .kitchen-topbar-actions {
   display: flex;
   align-items: center;

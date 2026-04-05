@@ -5,6 +5,7 @@
 import store from '../store.js';
 import router from '../router.js';
 import { showToast } from '../components/toast.js';
+import { icon } from '../utils/icons.js';
 
 export function renderBackend(section = 'products') {
   const app = document.getElementById('app');
@@ -17,20 +18,20 @@ export function renderBackend(section = 'products') {
   const navItems = role === 'admin'
     ? [
         { section: 'Configuration', items: [
-          { id: 'branches', icon: '\u{1F3E2}', label: 'Branches' },
-          { id: 'products', icon: '\u{1F4E6}', label: 'Products' },
-          { id: 'payment-methods', icon: '\u{1F4B3}', label: 'Payment Methods' },
-          { id: 'floors', icon: '\u{1F3E2}', label: 'Floors & Tables' },
-          { id: 'users', icon: '\u{1F465}', label: 'Users' },
+          { id: 'branches', icon: icon('branch', '', 'Branches'), label: 'Branches' },
+          { id: 'products', icon: icon('products', '', 'Products'), label: 'Products' },
+          { id: 'payment-methods', icon: icon('payment', '', 'Payment Methods'), label: 'Payment Methods' },
+          { id: 'floors', icon: icon('floors', '', 'Floors & Tables'), label: 'Floors & Tables' },
+          { id: 'users', icon: icon('users', '', 'Users'), label: 'Users' },
         ]},
         { section: 'Analytics', items: [
-          { id: 'reports', icon: '\u{1F4CA}', label: 'Reports & Dashboard' },
+          { id: 'reports', icon: icon('analytics', '', 'Reports & Dashboard'), label: 'Reports & Dashboard' },
         ]},
       ]
     : [
         { section: 'POS', items: [
-          { id: 'pos-settings', icon: '\u{1F5A5}\uFE0F', label: 'POS Terminal' },
-          { id: 'self-order', icon: '\u{1F4F1}', label: 'Self Ordering' },
+          { id: 'pos-settings', icon: icon('pos', '', 'POS Terminal'), label: 'POS Terminal' },
+          { id: 'self-order', icon: icon('mobile', '', 'Self Ordering'), label: 'Self Ordering' },
         ]},
       ];
 
@@ -38,7 +39,7 @@ export function renderBackend(section = 'products') {
     <div class="backend-layout">
       <aside class="backend-sidebar">
         <div class="sidebar-brand" id="sidebar-home-btn" style="cursor:pointer;" title="Back to Home">
-          <span class="sidebar-brand-icon">\u2615</span>
+          <span class="sidebar-brand-icon">${icon('brand', '', 'POS Cafe')}</span>
           <h2>POS Cafe</h2>
         </div>
 
@@ -82,7 +83,7 @@ export function renderBackend(section = 'products') {
               <div class="sidebar-user-name">${user?.fullName || 'User'}</div>
               <div class="sidebar-user-role">${user?.role || 'Staff'}</div>
             </div>
-            <button class="btn btn-icon btn-ghost" id="logout-btn" title="Logout" style="margin-left:auto">\u23FB</button>
+            <button class="btn btn-icon btn-ghost" id="logout-btn" title="Logout" style="margin-left:auto">${icon('logout', '', 'Logout')}</button>
           </div>
           <div style="margin-top:var(--space-sm);display:flex;justify-content:center">
             <button class="theme-toggle-btn" id="theme-toggle-btn"></button>
@@ -112,7 +113,7 @@ export function renderBackend(section = 'products') {
   const themeBtn = document.getElementById('theme-toggle-btn');
   function updateThemeBtn() {
     const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-    if (themeBtn) themeBtn.innerHTML = isDark ? '\u2600\uFE0F Light Mode' : '\u{1F319} Dark Mode';
+    if (themeBtn) themeBtn.innerHTML = `${icon(isDark ? 'sun' : 'moon', '', isDark ? 'Light Mode' : 'Dark Mode')}<span>${isDark ? 'Light Mode' : 'Dark Mode'}</span>`;
   }
   updateThemeBtn();
   themeBtn?.addEventListener('click', () => {
@@ -178,11 +179,11 @@ async function loadSection(section) {
     }
     case 'kitchen': {
       content.innerHTML = `
-        <div class="backend-header"><h1>\u{1F468}\u200D\u{1F373} Kitchen Display</h1></div>
+        <div class="backend-header"><h1>${icon('kitchen', '', 'Kitchen Display')}Kitchen Display</h1></div>
         <p style="color:var(--color-text-muted);margin-bottom:var(--space-lg);font-size:var(--fs-sm)">
           The Kitchen Display runs in a separate window for the kitchen staff to see and manage orders.
         </p>
-        <button class="btn btn-primary" id="open-kitchen-btn">\u{1FA9F} Open Kitchen Display</button>
+        <button class="btn btn-primary" id="open-kitchen-btn">${icon('open', '', 'Open Kitchen Display')}Open Kitchen Display</button>
       `;
       document.getElementById('open-kitchen-btn')?.addEventListener('click', () => {
         window.open(window.location.origin + window.location.pathname + '#/kitchen', '_blank');
@@ -191,11 +192,11 @@ async function loadSection(section) {
     }
     case 'customer-display': {
       content.innerHTML = `
-        <div class="backend-header"><h1>\u{1F5A5}\uFE0F Customer Display</h1></div>
+        <div class="backend-header"><h1>${icon('customer', '', 'Customer Display')}Customer Display</h1></div>
         <p style="color:var(--color-text-muted);margin-bottom:var(--space-lg);font-size:var(--fs-sm)">
           The Customer Display shows order details to the customer in a separate window.
         </p>
-        <button class="btn btn-primary" id="open-customer-btn">\u{1FA9F} Open Customer Display</button>
+        <button class="btn btn-primary" id="open-customer-btn">${icon('open', '', 'Open Customer Display')}Open Customer Display</button>
       `;
       document.getElementById('open-customer-btn')?.addEventListener('click', () => {
         window.open(window.location.origin + window.location.pathname + '#/customer', '_blank');
@@ -203,6 +204,6 @@ async function loadSection(section) {
       break;
     }
     default:
-      content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">\u{1F6A7}</div><div class="empty-state-text">Section coming soon</div></div>';
+      content.innerHTML = `<div class="empty-state"><div class="empty-state-icon">${icon('info', '', 'Coming soon')}</div><div class="empty-state-text">Section coming soon</div></div>`;
   }
 }

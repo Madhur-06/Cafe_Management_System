@@ -5,6 +5,7 @@
 import store from "../store.js";
 import router from "../router.js";
 import { showToast } from "../components/toast.js";
+import { icon } from "../utils/icons.js";
 
 const categoryLabels = {
   All: "All",
@@ -95,6 +96,7 @@ export function renderOrderScreen(container, tableId) {
               .map(
                 (product) => `
                   <div class="order-product-card animate-fadeInUp" data-product="${product.id}">
+                    <div class="order-product-emoji">${icon("products", "", product.name)}</div>
                     <div class="order-product-name">${product.name}</div>
                     <div class="order-product-price">${currency}${Number(product.price).toFixed(2)}</div>
                   </div>
@@ -127,12 +129,12 @@ export function renderOrderScreen(container, tableId) {
                             <div class="cart-item-price">${currency}${Number(item.price).toFixed(2)} ea.</div>
                           </div>
                           <div class="cart-item-qty">
-                            <button class="cart-qty-btn" data-action="dec" data-idx="${index}">-</button>
+                            <button class="cart-qty-btn" data-action="dec" data-idx="${index}">${icon("minus", "", "Decrease quantity")}</button>
                             <span class="cart-qty-value">${item.qty}</span>
                             <button class="cart-qty-btn" data-action="inc" data-idx="${index}">+</button>
                           </div>
                           <div class="cart-item-total">${currency}${(item.price * item.qty).toFixed(2)}</div>
-                          <span class="cart-item-remove" data-action="remove" data-idx="${index}">x</span>
+                          <span class="cart-item-remove" data-action="remove" data-idx="${index}">${icon("trash", "", "Remove item")}</span>
                         </div>
                       `
                     )

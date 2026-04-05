@@ -56,6 +56,9 @@
   font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .cd-order-count {
@@ -219,8 +222,16 @@
   padding: var(--space-3xl);
 }
 .cd-empty-icon {
-  font-size: 5rem;
+  width: 72px;
+  height: 72px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   opacity: 0.3;
+}
+.cd-empty-icon .ui-icon {
+  width: 2.6rem;
+  height: 2.6rem;
 }
 .cd-empty-state h2 {
   font-size: var(--fs-2xl);

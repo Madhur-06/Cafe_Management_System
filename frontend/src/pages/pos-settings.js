@@ -1,10 +1,11 @@
 /* ==========================================================================
-   POS Settings — Terminal setup and session management
+   POS Settings - Terminal setup and session management
    ========================================================================== */
 
 import store from '../store.js';
 import router from '../router.js';
 import { showToast } from '../components/toast.js';
+import { icon } from '../utils/icons.js';
 
 export function renderPosSettings(container) {
   function render() {
@@ -31,7 +32,7 @@ export function renderPosSettings(container) {
       </div>
 
       <div class="pos-terminal-card card" style="margin:0 auto">
-        <div class="pos-terminal-icon">🖥️</div>
+        <div class="pos-terminal-icon">${icon('pos', '', 'POS Terminal')}</div>
         <div class="pos-terminal-title">Odoo POS Cafe</div>
         <div class="pos-terminal-info">Point of Sale Terminal</div>
 

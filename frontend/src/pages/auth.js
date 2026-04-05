@@ -5,6 +5,7 @@
 import store from '../store.js';
 import router from '../router.js';
 import { showToast } from '../components/toast.js';
+import { icon } from '../utils/icons.js';
 
 function defaultRouteForRole(role) {
   const normalized = String(role || '').toLowerCase();
@@ -20,7 +21,7 @@ export function renderAuth() {
     <div class="auth-page">
       <div class="auth-card glass">
         <div class="auth-logo">
-          <div class="auth-logo-icon">☕</div>
+          <div class="auth-logo-icon">${icon('brand', '', 'Odoo POS Cafe')}</div>
           <h1>Odoo POS Cafe</h1>
           <p>Restaurant Point of Sale System</p>
         </div>
@@ -37,7 +38,7 @@ export function renderAuth() {
               <input type="password" class="form-input" id="auth-password"
                 placeholder="Enter password"
                 autocomplete="current-password" />
-              <button type="button" class="toggle-pw-btn" id="toggle-pw" title="Show/hide password">👁</button>
+              <button type="button" class="toggle-pw-btn" id="toggle-pw" title="Show/hide password">${icon('eye')}<span>Show</span></button>
             </div>
           </div>
           <button type="submit" class="btn btn-primary btn-lg btn-block auth-submit">
@@ -55,6 +56,7 @@ export function renderAuth() {
   document.getElementById('toggle-pw')?.addEventListener('click', () => {
     const input = document.getElementById('auth-password');
     input.type = input.type === 'password' ? 'text' : 'password';
+    document.getElementById('toggle-pw').innerHTML = `${icon(input.type === 'password' ? 'eye' : 'eyeOff')}<span>${input.type === 'password' ? 'Show' : 'Hide'}</span>`;
   });
 
   app.querySelector('#auth-form').addEventListener('submit', async (e) => {

@@ -5,6 +5,7 @@
 import store from '../store.js';
 import router from '../router.js';
 import { showToast } from '../components/toast.js';
+import { icon } from '../utils/icons.js';
 
 export function renderPosTerminal(view = 'floor', params = {}) {
   const app = document.getElementById('app');
@@ -24,17 +25,17 @@ export function renderPosTerminal(view = 'floor', params = {}) {
     <div class="pos-layout">
       <div class="pos-topbar">
         <div class="pos-topbar-left">
-          <span class="pos-topbar-brand" id="pos-brand-home" style="cursor:pointer;" title="Back to Dashboard">☕ POS Cafe</span>
+          <span class="pos-topbar-brand" id="pos-brand-home" style="cursor:pointer;" title="Back to Dashboard">${icon('brand', '', 'POS Cafe')}<span>POS Cafe</span></span>
           <div class="pos-topbar-nav">
             <button class="pos-topbar-btn ${view === 'floor' ? 'active' : ''}" id="pos-nav-table">Table</button>
             <button class="pos-topbar-btn ${view === 'order' ? 'active' : ''}" id="pos-nav-register">Register</button>
           </div>
         </div>
         <div class="pos-topbar-right">
-          <span class="pos-session-badge">● Session Active</span>
+          <span class="pos-session-badge">${icon('session', '', 'Session Active')}<span>Session Active</span></span>
           <button class="theme-toggle-btn" id="pos-theme-toggle"></button>
           <div class="pos-actions-dropdown">
-            <button class="btn btn-sm btn-ghost" id="pos-actions-toggle">Actions ▼</button>
+            <button class="btn btn-sm btn-ghost" id="pos-actions-toggle">${icon('analytics', '', 'Actions')}<span>Actions</span>${icon('chevronDown')}</button>
             <div class="pos-actions-menu" id="pos-actions-menu" style="display:none">
               <div class="pos-actions-item" id="action-reload">Reload Data</div>
               <div class="pos-actions-item" id="action-backend">Go to Back-end</div>
@@ -57,7 +58,7 @@ export function renderPosTerminal(view = 'floor', params = {}) {
   const posThemeBtn = document.getElementById('pos-theme-toggle');
   function updatePosThemeBtn() {
     const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-    if (posThemeBtn) posThemeBtn.innerHTML = isDark ? '☀️' : '🌙';
+    if (posThemeBtn) posThemeBtn.innerHTML = `${icon(isDark ? 'sun' : 'moon', '', isDark ? 'Light theme' : 'Dark theme')}<span>${isDark ? 'Light' : 'Dark'}</span>`;
   }
   updatePosThemeBtn();
   posThemeBtn?.addEventListener('click', () => {

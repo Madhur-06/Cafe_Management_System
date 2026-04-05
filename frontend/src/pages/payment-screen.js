@@ -6,6 +6,13 @@ import store from "../store.js";
 import router from "../router.js";
 import { showToast } from "../components/toast.js";
 import { generateUPIQR } from "../utils/qr.js";
+import { icon } from "../utils/icons.js";
+
+function paymentIcon(type) {
+  if (type === "cash") return icon("wallet", "", "Cash");
+  if (type === "card") return icon("payment", "", "Card");
+  return icon("qr", "", "UPI");
+}
 
 export function renderPaymentScreen(container, orderId) {
   let order = store.find("orders", orderId) || store.getDraftOrder();
@@ -50,7 +57,7 @@ export function renderPaymentScreen(container, orderId) {
                   .map(
                     (method) => `
                       <div class="payment-method-btn ${String(selectedMethod) === String(method.id) ? "selected" : ""}" data-method="${method.id}">
-                        <div class="payment-method-btn-icon">${method.icon}</div>
+                        <div class="payment-method-btn-icon">${paymentIcon(method.type)}</div>
                         <div class="payment-method-btn-name">${method.name}</div>
                       </div>
                     `
@@ -149,7 +156,7 @@ export function renderPaymentScreen(container, orderId) {
     container.innerHTML = `
       <div class="payment-layout">
         <div class="payment-success">
-          <div class="payment-success-icon">OK</div>
+          <div class="payment-success-icon">${icon("success", "ui-icon-2xl", "Payment successful")}</div>
           <h2>Payment Successful!</h2>
           <p>Thank you for your order</p>
           <div class="payment-success-amount">Amount Paid ${currency}${Number(order.total).toFixed(2)}</div>

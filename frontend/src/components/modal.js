@@ -1,6 +1,8 @@
 /* ==========================================================================
-   Modal — Reusable modal dialog component
+   Modal - Reusable modal dialog component
    ========================================================================== */
+
+import { icon } from '../utils/icons.js';
 
 export function openModal({ title, content, actions = [], onClose, wide = false }) {
   closeModal(); // close any existing
@@ -17,7 +19,7 @@ export function openModal({ title, content, actions = [], onClose, wide = false 
   header.className = 'modal-header';
   header.innerHTML = `
     <h3 class="modal-title">${title}</h3>
-    <button class="modal-close" id="modal-close-btn">✕</button>
+    <button class="modal-close" id="modal-close-btn" aria-label="Close dialog">${icon('close', '', 'Close dialog')}</button>
   `;
 
   const body = document.createElement('div');

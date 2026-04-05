@@ -5,6 +5,7 @@
 import store from "../store.js";
 import { showToast } from "../components/toast.js";
 import { openModal, closeModal } from "../components/modal.js";
+import { icon } from "../utils/icons.js";
 
 export function renderProducts(container) {
   const currency = store.get("settings")?.currency || "₹";
@@ -14,7 +15,7 @@ export function renderProducts(container) {
 
     container.innerHTML = `
       <div class="backend-header">
-        <h1>Products</h1>
+        <h1>${icon("products", "", "Products")}Products</h1>
         <div class="backend-header-actions">
           <button class="btn btn-primary" id="add-product-btn">+ Add Product</button>
         </div>
@@ -22,13 +23,14 @@ export function renderProducts(container) {
 
       ${products.length === 0 ? `
         <div class="empty-state">
-          <div class="empty-state-icon">Box</div>
+          <div class="empty-state-icon">${icon("products", "", "No products")}</div>
           <div class="empty-state-text">No products yet. Add your first product!</div>
         </div>
       ` : `
         <div class="products-grid stagger">
           ${products.map((product) => `
             <div class="card product-admin-card animate-fadeInUp" data-id="${product.id}">
+              <div class="product-admin-emoji">${icon("products", "", product.category || "Product")}</div>
               <div class="product-admin-name">${product.name}</div>
               <div class="product-admin-category">${product.category} · ${product.unit}</div>
               <div class="product-admin-price">${currency}${product.price.toFixed(2)}</div>

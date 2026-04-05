@@ -29,7 +29,20 @@
   padding: 0 var(--space-lg);
   margin-bottom: var(--space-xl);
 }
-.sidebar-brand-icon { font-size: 1.6rem; }
+.sidebar-brand-icon {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: rgba(113,76,245,0.12);
+  color: var(--color-primary-light);
+}
+.sidebar-brand-icon .ui-icon {
+  width: 1.15rem;
+  height: 1.15rem;
+}
 .sidebar-brand h2 {
   font-size: var(--fs-lg);
   font-weight: 700;
@@ -81,9 +94,11 @@
   border-left-color: var(--color-primary);
 }
 .sidebar-link-icon {
-  font-size: 1.1rem;
   width: 24px;
-  text-align: center;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .sidebar-footer {
@@ -137,6 +152,9 @@
 .backend-header h1 {
   font-size: var(--fs-2xl);
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
 }
 .backend-header-actions {
   display: flex;
@@ -174,8 +192,17 @@
 .product-admin-card:hover::before { opacity: 1; }
 
 .product-admin-emoji {
-  font-size: 2.4rem;
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: var(--space-sm);
+  color: var(--color-primary-light);
+}
+.product-admin-emoji .ui-icon {
+  width: 1.4rem;
+  height: 1.4rem;
 }
 .product-admin-name {
   font-weight: 600;
@@ -223,9 +250,6 @@
   min-width: 0;
 }
 .payment-method-icon {
-  font-size: 1.1rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
   width: 56px;
   height: 56px;
   display: flex;
@@ -235,6 +259,11 @@
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   flex-shrink: 0;
+  color: var(--color-primary-light);
+}
+.payment-method-icon .ui-icon {
+  width: 1.4rem;
+  height: 1.4rem;
 }
 .payment-method-name {
   font-weight: 600;
@@ -348,8 +377,19 @@
   text-align: center;
 }
 .pos-terminal-icon {
-  font-size: 3rem;
-  margin-bottom: var(--space-md);
+  width: 72px;
+  height: 72px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-md);
+  border-radius: 22px;
+  background: rgba(113,76,245,0.12);
+  color: var(--color-primary-light);
+}
+.pos-terminal-icon .ui-icon {
+  width: 2rem;
+  height: 2rem;
 }
 .pos-terminal-title {
   font-size: var(--fs-xl);

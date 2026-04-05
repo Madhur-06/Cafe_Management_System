@@ -1,10 +1,11 @@
 /* ==========================================================================
-   Self Order — Token-based mobile ordering
+   Self Order - Token-based mobile ordering
    ========================================================================== */
 
 import store from '../store.js';
 import { showToast } from '../components/toast.js';
 import { generateTokenQR } from '../utils/qr.js';
+import { icon } from '../utils/icons.js';
 
 export function renderSelfOrder(container) {
   const tables = store.getAll('tables').filter(t => t.active);
@@ -29,7 +30,7 @@ export function renderSelfOrder(container) {
 
       ${!session ? `
         <div class="card" style="max-width:500px;text-align:center;padding:var(--space-2xl)">
-          <div style="font-size:2rem;margin-bottom:var(--space-md)">⚠️</div>
+          <div style="font-size:2rem;margin-bottom:var(--space-md)">${icon('alert', 'ui-icon-xl', 'Session required')}</div>
           <p style="color:var(--color-text-muted)">Please open a POS session first to enable self-ordering.</p>
           <a href="#/backend/pos-settings" class="btn btn-primary" style="margin-top:var(--space-md)">Go to POS Settings</a>
         </div>
@@ -63,11 +64,11 @@ export function renderSelfOrder(container) {
                 Scan this QR code with your phone to start ordering.
               </p>
               <p style="font-size:var(--fs-xs);color:var(--color-text-muted);margin-top:var(--space-sm)">
-                Table ${tables.find(t => t.id === selectedTable)?.number || '?'} · Session Active
+                Table ${tables.find(t => t.id === selectedTable)?.number || '?'} | Session Active
               </p>
             ` : `
               <div style="padding:var(--space-2xl);color:var(--color-text-muted)">
-                <div style="font-size:2rem;margin-bottom:var(--space-sm);opacity:0.3">📱</div>
+                <div style="font-size:2rem;margin-bottom:var(--space-sm);opacity:0.55">${icon('qr', 'ui-icon-xl', 'QR token')}</div>
                 <p style="font-size:var(--fs-sm)">Select a table and generate a token</p>
               </div>
             `}
@@ -77,7 +78,7 @@ export function renderSelfOrder(container) {
         <!-- Self-Order simulation section -->
         ${tokenGenerated && selectedTable ? `
           <div class="card" style="max-width:800px;margin-top:var(--space-xl)">
-            <h3 style="margin-bottom:var(--space-md)">📱 Simulate Mobile Order</h3>
+            <h3 style="margin-bottom:var(--space-md)">Simulate Mobile Order</h3>
             <p style="font-size:var(--fs-sm);color:var(--color-text-muted);margin-bottom:var(--space-md)">
               This simulates what a customer would see after scanning the QR. Select items and submit the order.
             </p>
@@ -137,7 +138,7 @@ export function renderSelfOrder(container) {
     function renderUI() {
       productsDiv.innerHTML = products.map(p => `
         <div class="order-product-card" data-pid="${p.id}" style="cursor:pointer">
-          <div class="order-product-emoji">${p.emoji || '📦'}</div>
+          <div class="order-product-emoji">${p.emoji || icon('products', '', 'Product')}</div>
           <div class="order-product-name">${p.name}</div>
           <div class="order-product-price">${currency}${p.price.toFixed(2)}</div>
         </div>
@@ -149,11 +150,11 @@ export function renderSelfOrder(container) {
             <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:var(--fs-sm);border-bottom:1px solid var(--color-border)">
               <span>${item.name}</span>
               <span style="display:flex;align-items:center;gap:6px">
-                <button class="cart-qty-btn self-dec" data-idx="${i}" style="width:24px;height:24px;border-radius:4px;cursor:pointer;background:var(--color-bg);border:1px solid var(--color-border);font-weight:700">−</button>
+                <button class="cart-qty-btn self-dec" data-idx="${i}" style="width:24px;height:24px;border-radius:4px;cursor:pointer;background:var(--color-bg);border:1px solid var(--color-border);font-weight:700">${icon('minus', '', 'Decrease quantity')}</button>
                 <span style="min-width:18px;text-align:center;font-weight:700">${item.qty}</span>
                 <button class="cart-qty-btn self-inc" data-idx="${i}" style="width:24px;height:24px;border-radius:4px;cursor:pointer;background:var(--color-bg);border:1px solid var(--color-border);font-weight:700">+</button>
                 <span style="min-width:52px;color:var(--color-secondary);font-weight:700;text-align:right">${currency}${(item.price * item.qty).toFixed(2)}</span>
-                <button class="self-remove" data-idx="${i}" style="cursor:pointer;background:none;border:none;color:var(--color-text-muted);font-size:1rem;padding:2px 4px" title="Remove">✕</button>
+                <button class="self-remove" data-idx="${i}" style="cursor:pointer;background:none;border:none;color:var(--color-text-muted);font-size:1rem;padding:2px 4px" title="Remove">${icon('trash', '', 'Remove item')}</button>
               </span>
             </div>
           `).join('')}</div>`;

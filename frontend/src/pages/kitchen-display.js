@@ -4,6 +4,7 @@
 
 import store from "../store.js";
 import { showToast } from "../components/toast.js";
+import { icon } from "../utils/icons.js";
 
 export function renderKitchenDisplay() {
   const app = document.getElementById("app");
@@ -15,7 +16,7 @@ export function renderKitchenDisplay() {
     const themeButton = document.getElementById("kitchen-theme-toggle");
     if (!themeButton) return;
     const isDark = document.documentElement.getAttribute("data-theme") !== "light";
-    themeButton.textContent = isDark ? "☀️ Light" : "🌙 Dark";
+    themeButton.innerHTML = `${icon(isDark ? "sun" : "moon", "", isDark ? "Light theme" : "Dark theme")}<span>${isDark ? "Light" : "Dark"}</span>`;
   }
 
   function renderTicket(order) {
@@ -38,7 +39,7 @@ export function renderKitchenDisplay() {
         <div class="kitchen-ticket-header">
           <div>
             <span class="kitchen-ticket-id">#${order.orderNumber}</span>
-            <span class="kitchen-ticket-table">· ${order.tableNumber ? `Table ${order.tableNumber}` : "Self Order"}</span>
+            <span class="kitchen-ticket-table">| ${order.tableNumber ? `Table ${order.tableNumber}` : "Self Order"}</span>
           </div>
         </div>
         <div class="kitchen-ticket-status-row">
@@ -48,7 +49,7 @@ export function renderKitchenDisplay() {
         <div class="kitchen-ticket-items">
           ${order.items.map((item, index) => `
             <div class="kitchen-ticket-item ${item.prepared ? "done" : ""}" data-toggle-item="${order.id}|${index}">
-              <span class="kitchen-ticket-item-name">${item.emoji || ""} ${item.name}</span>
+              <span class="kitchen-ticket-item-name">${item.name}</span>
               <span class="kitchen-ticket-item-qty">x${item.qty}</span>
             </div>
           `).join("")}
@@ -81,7 +82,7 @@ export function renderKitchenDisplay() {
       <div class="kitchen-layout no-anim">
         <div class="kitchen-topbar">
           <div>
-            <h1><span class="kitchen-topbar-icon">Kitchen</span> Kitchen Display</h1>
+            <h1><span class="kitchen-topbar-icon">${icon("kitchen", "", "Kitchen Display")}</span> Kitchen Display</h1>
             <div style="font-size:var(--fs-sm);color:var(--color-text-muted)">${activeBranch ? `Branch: ${activeBranch.name}` : "Current branch"}</div>
           </div>
           <div class="kitchen-topbar-actions">

@@ -1,5 +1,12 @@
 import store from "../store.js";
 import { showToast } from "../components/toast.js";
+import { icon } from "../utils/icons.js";
+
+function paymentIcon(type) {
+  if (type === "cash") return icon("wallet");
+  if (type === "card") return icon("payment");
+  return icon("qr");
+}
 
 function methodDescription(type) {
   if (type === "cash") return "Accept cash payments at the register. Change will be calculated automatically.";
@@ -20,7 +27,7 @@ export function renderPaymentMethods(container) {
     container.innerHTML = `
       <div class="backend-header">
         <div>
-          <h1>Payment Methods</h1>
+          <h1>${icon("payment", "", "Payment Methods")}Payment Methods</h1>
           <div style="font-size:var(--fs-sm);color:var(--color-text-muted)">Fixed methods for checkout: Cash, Card, and UPI</div>
         </div>
       </div>
@@ -33,7 +40,7 @@ export function renderPaymentMethods(container) {
           <div class="card payment-method-card animate-fadeInUp" data-id="${method.id}">
             <div class="payment-method-header">
               <div class="payment-method-info">
-                <div class="payment-method-icon">${method.icon}</div>
+                <div class="payment-method-icon">${paymentIcon(method.type)}</div>
                 <div>
                   <div class="payment-method-name">${method.name}</div>
                   <div class="payment-method-type">${methodTypeLabel(method.type)}</div>

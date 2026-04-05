@@ -50,8 +50,19 @@
   margin-bottom: var(--space-xl);
 }
 .auth-logo-icon {
-  font-size: 2.8rem;
-  margin-bottom: var(--space-sm);
+  width: 76px;
+  height: 76px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-sm);
+  border-radius: 24px;
+  background: rgba(113,76,245,0.12);
+  color: var(--color-primary-light);
+}
+.auth-logo-icon .ui-icon {
+  width: 2.2rem;
+  height: 2.2rem;
 }
 .auth-logo h1 {
   font-family: var(--font-heading);

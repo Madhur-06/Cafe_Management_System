@@ -1,10 +1,11 @@
 /* ==========================================================================
-   Floors & Tables — Floor plan management
+   Floors & Tables - Floor plan management
    ========================================================================== */
 
 import store from '../store.js';
 import { showToast } from '../components/toast.js';
 import { openModal, closeModal } from '../components/modal.js';
+import { icon } from '../utils/icons.js';
 
 export function renderFloors(container) {
   let activeFloorId = store.getAll('floors')[0]?.id || null;
@@ -18,7 +19,7 @@ export function renderFloors(container) {
 
     container.innerHTML = `
       <div class="backend-header">
-        <h1>🏢 Floors & Tables</h1>
+        <h1>${icon('floors', '', 'Floors & Tables')}Floors & Tables</h1>
         <div class="backend-header-actions">
           <button class="btn btn-ghost" id="add-floor-btn">+ Add Floor</button>
           <button class="btn btn-primary" id="add-table-btn" ${!activeFloorId ? 'disabled' : ''}>+ Add Table</button>
@@ -27,7 +28,7 @@ export function renderFloors(container) {
 
       ${floors.length === 0 ? `
         <div class="empty-state">
-          <div class="empty-state-icon">🏢</div>
+          <div class="empty-state-icon">${icon('branch', '', 'No floors')}</div>
           <div class="empty-state-text">No floors created yet. Start by adding a floor!</div>
         </div>
       ` : `
@@ -35,14 +36,14 @@ export function renderFloors(container) {
           ${floors.map(f => `
             <div class="floor-tab ${f.id === activeFloorId ? 'active' : ''}" data-floor="${f.id}">
               ${f.name}
-              <button class="delete-floor-btn" data-floor-id="${f.id}" style="margin-left:8px;background:none;border:none;cursor:pointer;color:inherit;opacity:0.5;font-size:0.75rem" title="Delete Floor">✕</button>
+              <button class="delete-floor-btn" data-floor-id="${f.id}" style="margin-left:8px;background:none;border:none;cursor:pointer;color:inherit;opacity:0.5;font-size:0.75rem" title="Delete Floor">${icon('trash', '', 'Delete Floor')}</button>
             </div>
           `).join('')}
         </div>
 
         ${floorTables.length === 0 ? `
           <div class="empty-state">
-            <div class="empty-state-icon">🪑</div>
+            <div class="empty-state-icon">${icon('table', '', 'No tables')}</div>
             <div class="empty-state-text">No tables on this floor. Add some tables!</div>
           </div>
         ` : `
